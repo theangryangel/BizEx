@@ -11,7 +11,7 @@ use Mix.Config
 # You can configure your application as:
 #
 config :bizex, :schedule, %{
-  mon: [[~T[09:00:00], ~T[17:30:00]]],
+  mon: [[~T[09:00:00], ~T[12:30:00]], [~T[13:00:00], ~T[17:30:00]]],
   tue: [[~T[09:00:00], ~T[17:30:00]]],
   wed: [[~T[09:00:00], ~T[17:30:00]]],
   thu: [[~T[09:00:00], ~T[17:30:00]]],
@@ -24,6 +24,7 @@ config :bizex, :holidays, [
   ~D[2017-09-01],
   ~D[2017-10-01],
   ~D[2017-09-01],
+  ~D[2017-12-25]
 ]
 #
 # and access this configuration in your application as:
