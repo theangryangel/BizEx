@@ -44,7 +44,6 @@ defmodule BizEx.Schedule do
     end
   end
 
-  # TODO currently not correctly selecting the next datetime, if multiple periods per day
   def next_datetime_in_period(schedule, datetime, opts \\ %{}) do
     direction = opts[:direction] || :up
     force_time = opts[:force] || false
@@ -67,6 +66,10 @@ defmodule BizEx.Schedule do
       {datetime, period}
     else
       _err ->
+
+        # TODO currently not correctly selecting the next period, if multiple periods per day
+        # assumes 1 period per day.
+
         days = if direction == :up, do: 1, else: -1
 
         next_datetime_in_period(schedule, Timex.shift(datetime, days: days), direction: direction, force: true)
