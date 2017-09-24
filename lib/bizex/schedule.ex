@@ -44,6 +44,7 @@ defmodule BizEx.Schedule do
     end
   end
 
+  # TODO currently not correctly selecting the next datetime, if multiple periods per day
   def next_datetime_in_period(schedule, datetime, opts \\ %{}) do
     direction = opts[:direction] || :up
     force_time = opts[:force] || false
