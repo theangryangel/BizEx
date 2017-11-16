@@ -1,78 +1,134 @@
 defmodule BizEx.Schedule do
+  defstruct time_zone: "Etc/UTC", periods: [], holidays: []
 
-  alias BizEx.Schedule
+  alias BizEx.Period
 
-  defstruct time_zone: "Etc/UTC", schedule: [], holidays: []
+  # TODO: Re-implement.
+  #def load_config() do
+  #%Schedule{
+  #time_zone: load_schedule_timezone(),
+  #schedule: load_schedule(),
+  #holidays: load_holidays()
+  #}
+  #end
 
-  def load() do
-    %Schedule{
-      time_zone: load_schedule_timezone(),
-      schedule: load_schedule(),
-      holidays: load_holidays()
+  #defp load_schedule() do
+  #Application.get_env(:bizex, :schedule, %{})
+  #end
+
+  #defp load_schedule_timezone() do
+  #Application.get_env(:bizex, :schedule_timezone, "Etc/UTC")
+  #end
+
+  # defp load_holidays() do
+  #Application.get_env(:bizex, :holidays, [])
+  #end
+
+  def default() do
+    %__MODULE__{
+      time_zone: "Europe/London", 
+      periods: [
+        # TODO Probably should add some kind of validation functionality. 
+        # Currently assumes the order of definition is Mon-Sun, in the appropriate time order
+        %Period{start_at: ~T[09:00:00], end_at: ~T[12:30:00], weekday: 1 },
+        %Period{start_at: ~T[13:00:00], end_at: ~T[17:30:00], weekday: 1 },
+        %Period{start_at: ~T[09:00:00], end_at: ~T[17:30:00], weekday: 2 },
+        %Period{start_at: ~T[09:00:00], end_at: ~T[17:30:00], weekday: 3 },
+        %Period{start_at: ~T[09:00:00], end_at: ~T[17:30:00], weekday: 4 },
+        %Period{start_at: ~T[09:00:00], end_at: ~T[17:30:00], weekday: 5 }
+      ],
+      holidays: [
+        ~D[2017-12-25]
+      ]
     }
   end
 
-  def fetch(%Schedule{} = schedule, %Date{} = date) do
-    ordinal = date
-      |> Timex.weekday
-      |> ordinal_week_day_to_atom
-
-    Map.get(schedule.schedule, ordinal)
+  def holiday?(%__MODULE__{} = schedule, %Date{} = date) do
+    Enum.member?(schedule.holidays, date)
   end
 
-  defp load_schedule() do
-    Application.get_env(:bizex, :schedule, %{})
+  def holiday?(%__MODULE__{} = schedule, %DateTime{} = datetime) do
+    holiday?(schedule, DateTime.to_date(datetime))
   end
 
-  defp load_schedule_timezone() do
-    Application.get_env(:bizex, :schedule_timezone, "Etc/UTC")
+  def holiday?(%__MODULE__{} = schedule, %NaiveDateTime{} = datetime) do
+    holiday?(schedule, NaiveDateTime.to_date(datetime))
   end
 
-  defp load_holidays() do
-    Application.get_env(:bizex, :holidays, [])
-  end
+  def between?(%__MODULE__{} = schedule, %DateTime{} = datetime) do
+    period = schedule.periods
+             |> Enum.map(fn x ->
+               if Period.between?(x, datetime) do
+                 x
+               end
+             end)
+             |> Enum.reject(&is_nil/1)
+             |> List.first
 
-  def ordinal_week_day_to_atom(n) do
-    case n do
-      1 -> :mon
-      2 -> :tue
-      3 -> :wed
-      4 -> :thu
-      5 -> :fri
-      6 -> :sat
-      7 -> :sun
-    end
-  end
-
-  def next_datetime_in_period(schedule, datetime, opts \\ %{}) do
-    direction = opts[:direction] || :up
-    force_time = opts[:force] || false
-
-    time = DateTime.to_time(datetime)
-
-    current_periods = BizEx.Schedule.fetch(schedule, Timex.to_date(datetime))
-
-    datetime = if force_time and !is_nil(current_periods) and length(current_periods) > 0 do
-      force_to = if direction == :up, do: 0, else: 1
-
-      BizEx.Time.force_to(datetime, elem(List.first(current_periods), force_to))
+    if !is_nil(period) and !holiday?(schedule, datetime) do
+      {:ok, period}
     else
-      datetime
-    end
-
-    with false <- BizEx.Date.holiday?(schedule, datetime),
-      {:ok, period} <- BizEx.Time.between_any?(time, current_periods)
-    do
-      {datetime, period}
-    else
-      _err ->
-
-        # TODO currently not correctly selecting the next period, if multiple periods per day
-        # assumes 1 period per day.
-
-        days = if direction == :up, do: 1, else: -1
-
-        next_datetime_in_period(schedule, Timex.shift(datetime, days: days), direction: direction, force: true)
+      {:error, "not in hours"}
     end
   end
+
+  def current(%__MODULE__{} = schedule, %DateTime{} = datetime) do
+    between?(schedule, datetime)
+  end
+
+  def next(%__MODULE__{} = schedule, %DateTime{} = datetime, opts \\ []) do
+    force_time = Keyword.get(opts, :force, false)
+
+    period = schedule.periods
+             |> Enum.map(fn x ->
+
+               cond do
+                 holiday?(schedule, datetime) ->
+                   nil
+                 force_time == true and Period.today?(x, datetime) ->
+                   x
+                 Period.after?(x, datetime) ->
+                   x
+                 true ->
+                   nil
+               end
+             end)
+             |> Enum.reject(&is_nil/1)
+             |> List.first
+
+    if !is_nil(period) do
+      {:ok, period, Period.use_time(period, datetime, :start)}
+    else
+      next(schedule, Timex.shift(datetime, days: 1), [force: true])
+    end
+  end
+
+  def prev(%__MODULE__{} = schedule, %DateTime{} = datetime, opts \\ []) do
+    force_time = Keyword.get(opts, :force, false)
+
+    period = schedule.periods
+             |> Enum.map(fn x ->
+
+               cond do
+                 holiday?(schedule, datetime) ->
+                   nil
+                 force_time == true and Period.today?(x, datetime) ->
+                   x
+                 Period.before?(x, datetime) ->
+                   x
+                 true ->
+                   nil
+               end
+             end)
+             |> Enum.reject(&is_nil/1)
+             |> List.first
+
+    if !is_nil(period) do
+      {:ok, period, Period.use_time(period, datetime, :end)}
+    else
+      prev(schedule, Timex.shift(datetime, days: -1), [force: true])
+    end
+  end
+
 end
+

@@ -1,5 +1,5 @@
 defmodule BizEx.Units do
-  @defmodule false
+  @moduledoc false
 
   def to_seconds(units) when is_list(units) do
     units

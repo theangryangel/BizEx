@@ -2,86 +2,36 @@ defmodule BizEx do
   @moduledoc """
   Documentation for BizEx.
   """
+  alias BizEx.Schedule
+  alias BizEx.Math
 
-  @doc """
-  Is a given date, or datetime, a working day?
-  """
-  def working?(datetime) do
-    BizEx.Schedule.load()
-    |> BizEx.Date.working?(datetime)
-  end
-
-  @doc """
-  Is a given date, or datetime, a holiday?
-  """
-  def holiday?(datetime) do
-    BizEx.Schedule.load()
-    |> BizEx.Date.holiday?(datetime)
-  end
-
-  @doc """
-  Adds hours, minutes, seconds, etc. to a date, working time only
-  """
-  def shift(datetime, params) when is_list(params) do
-    seconds = BizEx.Units.to_seconds(params)
-    shift(datetime, seconds)
-  end
-
-  def shift(datetime, seconds) when is_integer(seconds) and seconds == 0 do
-    schedule = BizEx.Schedule.load()
-    {next_datetime, _period} = BizEx.Schedule.next_datetime_in_period(schedule, Timex.Timezone.convert(datetime, schedule.time_zone))
-
-    Timex.Timezone.convert(next_datetime, datetime.time_zone)
-  end
-
-  def shift(datetime, seconds) when is_integer(seconds) and seconds > 0 do
-    IO.puts "shifting up #{datetime}, by seconds: #{seconds}"
-    schedule = BizEx.Schedule.load()
-    
+  def shift(schedule, datetime, params) do
     converted_datetime = Timex.Timezone.convert(datetime, schedule.time_zone)
-
-    {starting_datetime, period} = BizEx.Schedule.next_datetime_in_period(schedule, converted_datetime)
-
-    IO.puts "using shiftup start point of #{starting_datetime}"
-
-    raw_shifted = Timex.shift(starting_datetime, seconds: seconds)
-
-    period_ends_at = BizEx.Time.force_to(starting_datetime, elem(period, 1))
-
-    if Timex.after?(raw_shifted, period_ends_at) do
-      remainder = Timex.diff(raw_shifted, period_ends_at, :seconds)
-
-      period_ends_at
-      |> Timex.shift(seconds: 1)
-      |> Timex.Timezone.convert(datetime.time_zone)
-      |> shift(remainder-1)
-    else
-      Timex.Timezone.convert(raw_shifted, datetime.time_zone)
-    end
+    schedule 
+    |> Math.shift(converted_datetime, params)
+    |> Timex.Timezone.convert(datetime.time_zone)
   end
 
-  def shift(datetime, seconds) when is_integer(seconds) and seconds < 0 do
-    IO.puts "shifting down #{datetime}, by seconds: #{seconds}"
-    schedule = BizEx.Schedule.load()
-    
+  def prev(schedule, datetime) do
     converted_datetime = Timex.Timezone.convert(datetime, schedule.time_zone)
+    {:ok, period, converted_datetime} = Schedule.prev(schedule, converted_datetime)
 
-    {starting_datetime, period} = BizEx.Schedule.next_datetime_in_period(schedule, converted_datetime, direction: :down)
+    {:ok, period, Timex.Timezone.convert(converted_datetime, datetime.time_zone)}
+  end
 
-    raw_shifted = Timex.shift(starting_datetime, seconds: seconds)
+  def next(schedule, datetime) do
+    converted_datetime = Timex.Timezone.convert(datetime, schedule.time_zone)
+    {:ok, period, converted_datetime} = Schedule.next(schedule, converted_datetime)
 
-    period_starts_at = BizEx.Time.force_to(starting_datetime, elem(period, 0))
+    {:ok, period, Timex.Timezone.convert(converted_datetime, datetime.time_zone)}
+  end
 
-    if Timex.before?(raw_shifted, period_starts_at) do
-      remainder = Timex.diff(raw_shifted, period_starts_at, :seconds)
+  def holiday?(schedule, datetime) do
+    date = datetime
+    |> Timex.Timezone.convert(schedule.time_zone)
+    |> DateTime.to_date
 
-      period_starts_at
-      |> Timex.shift(seconds: -1)
-      |> Timex.Timezone.convert(datetime.time_zone)
-      |> shift(remainder+1)
-    else
-      Timex.Timezone.convert(raw_shifted, datetime.time_zone)
-    end
+    Schedule.holiday?(schedule, date)
   end
 
 end
