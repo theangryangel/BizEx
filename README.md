@@ -17,7 +17,6 @@ Inspired by [Biz](https://github.com/zendesk/biz), [business_time](https://githu
 ## Known Issues
   * There are assumptions based on the schedule order. This will be addressed before "1.0".
   * Shifting of time is not leap second aware (sorry for my purposes I just really dont need to engineer this in)
-  * No CI tests (yet)
   * No module docs (yet)
 
 ## Getting Started
