@@ -1,5 +1,7 @@
 # BizEx
 
+[![Build Status](https://travis-ci.org/theangryangel/BizEx.svg?branch=master)](https://travis-ci.org/theangryangel/BizEx)
+
 Work in Progress. Incomplete. API not stable. Minimal documentation. May contain bugs. Help wanted, etc.
 
 **You have been warned.**
