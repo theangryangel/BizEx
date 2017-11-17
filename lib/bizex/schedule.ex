@@ -50,7 +50,7 @@ defmodule BizEx.Schedule do
   """
   def set_timezone(%__MODULE__{} = schedule, time_zone) when is_binary(time_zone) do
     if Timex.Timezone.exists?(time_zone) do
-      %{ schedule | time_zone: time_zone }
+      %{schedule | time_zone: time_zone}
     else 
       raise "invalid time zone"
     end
@@ -58,21 +58,13 @@ defmodule BizEx.Schedule do
 
   @doc """
   Add a working period (comprising of `start_at` time, `end_at` time and a `weekday` number) to a `schedule`, 
-  ensuring that the periods are correctly ordered.
+  ensuring that the periods are correctly ordered and no overlapping of periods occurs.
   """
   def add_period(%__MODULE__{} = schedule, %Time{} = start_at, %Time{} = end_at, weekday) when weekday >= 1 and weekday <= 7 do
-    overlaps = Enum.any?(schedule.periods, fn x -> 
-      x.weekday == weekday and Timex.between?(start_at, x.start_at, x.end_at, inclusive: true)
-    end)
+    new_period = %Period{start_at: start_at, end_at: end_at, weekday: weekday}
 
-    unless overlaps do
-      sorted = (schedule.periods ++ [%Period{start_at: start_at, end_at: end_at, weekday: weekday }])
-               |> Enum.sort(fn x, y -> 
-                 # TODO fix this so that the start times are also appropriately sorted.
-                 x.weekday < y.weekday
-               end)
-
-      %{schedule | periods: sorted}
+    unless overlaps?(schedule.periods, new_period) do
+      %{schedule | periods: sort_periods(schedule.periods ++ [new_period])}
     else
       raise "overlapping period defined, this is unsupported"      
     end
@@ -201,5 +193,24 @@ defmodule BizEx.Schedule do
     end
   end
 
+  # Sort a list of periods, into their correct order
+  defp sort_periods(periods) do
+    periods
+    |> Enum.sort(fn x, y -> 
+       # TODO this seems a bit crap, there's probably a better way to do it.
+       if (x.weekday == y.weekday) do
+         x.start_at < y.start_at
+       else
+         x.weekday < y.weekday
+       end
+     end)
+  end
+
+  # Determine if the new_period overlaps with any of the existing periods
+  defp overlaps?(existing_periods, %Period{} = new_period) do
+    Enum.any?(existing_periods, fn x -> 
+        x.weekday == new_period.weekday and Timex.between?(new_period.start_at, x.start_at, x.end_at, inclusive: true)
+    end)
+  end
 end
 
