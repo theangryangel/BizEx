@@ -24,7 +24,7 @@ defmodule BizEx.Math do
       raw_shifted = Timex.shift(datetime, seconds: seconds)
       period_ends_at = Period.use_time(period, datetime, :end)
 
-      if (Timex.after?(raw_shifted, period_ends_at)) do
+      if Timex.after?(raw_shifted, period_ends_at) do
         remainder = Timex.diff(raw_shifted, period_ends_at, :seconds)
 
         {:ok, _period, next_start_time} = Schedule.next(schedule, period_ends_at)
@@ -44,7 +44,7 @@ defmodule BizEx.Math do
       raw_shifted = Timex.shift(datetime, seconds: seconds)
       period_starts_at = Period.use_time(period, datetime, :end)
 
-      if (Timex.after?(raw_shifted, period_starts_at)) do
+      if Timex.after?(raw_shifted, period_starts_at) do
         remainder = Timex.diff(raw_shifted, period_starts_at, :seconds)
 
         {:ok, _period, next_start_time} = Schedule.prev(schedule, period_starts_at)

@@ -32,16 +32,21 @@ defmodule BizEx.Schedule do
     %__MODULE__{
       time_zone: "Europe/London", 
       periods: [
-        %Period{start_at: ~T[09:00:00], end_at: ~T[12:30:00], weekday: 1 },
-        %Period{start_at: ~T[13:00:00], end_at: ~T[17:30:00], weekday: 1 },
-        %Period{start_at: ~T[09:00:00], end_at: ~T[17:30:00], weekday: 2 },
-        %Period{start_at: ~T[09:00:00], end_at: ~T[17:30:00], weekday: 3 },
-        %Period{start_at: ~T[09:00:00], end_at: ~T[17:30:00], weekday: 4 },
-        %Period{start_at: ~T[09:00:00], end_at: ~T[17:30:00], weekday: 5 }
+        %Period{start_at: ~T[09:00:00], end_at: ~T[12:30:00], weekday: 1},
+        %Period{start_at: ~T[13:00:00], end_at: ~T[17:30:00], weekday: 1},
+        %Period{start_at: ~T[09:00:00], end_at: ~T[17:30:00], weekday: 2},
+        %Period{start_at: ~T[09:00:00], end_at: ~T[17:30:00], weekday: 3},
+        %Period{start_at: ~T[09:00:00], end_at: ~T[17:30:00], weekday: 4},
+        %Period{start_at: ~T[09:00:00], end_at: ~T[17:30:00], weekday: 5}
       ],
       holidays: [
         ~D[2017-12-25]
       ]
+      # TODO add date specific override support
+      # How do we feel about something like this?
+      # overrides: %{
+      #   '2017-09-01': %Period{start_at: ~T[09:00:00], end_at: ~T[17:30:00]}
+      # }
     }
   end
 
@@ -63,10 +68,10 @@ defmodule BizEx.Schedule do
   def add_period(%__MODULE__{} = schedule, %Time{} = start_at, %Time{} = end_at, weekday) when weekday >= 1 and weekday <= 7 do
     new_period = %Period{start_at: start_at, end_at: end_at, weekday: weekday}
 
-    unless overlaps?(schedule.periods, new_period) do
-      %{schedule | periods: sort_periods(schedule.periods ++ [new_period])}
-    else
+    if overlaps?(schedule.periods, new_period) do
       raise "overlapping period defined, this is unsupported"      
+    else    
+      %{schedule | periods: sort_periods(schedule.periods ++ [new_period])}
     end
   end
 
@@ -153,10 +158,10 @@ defmodule BizEx.Schedule do
              |> Enum.reject(&is_nil/1)
              |> List.first
 
-    if !is_nil(period) do
-      {:ok, period, Period.use_time(period, datetime, :start)}
+    if is_nil(period) do
+      next(schedule, Timex.shift(datetime, days: 1), [force: true])  
     else
-      next(schedule, Timex.shift(datetime, days: 1), [force: true])
+      {:ok, period, Period.use_time(period, datetime, :start)}      
     end
   end
 
@@ -186,10 +191,10 @@ defmodule BizEx.Schedule do
              |> Enum.reject(&is_nil/1)
              |> List.first
 
-    if !is_nil(period) do
-      {:ok, period, Period.use_time(period, datetime, :end)}
+    if is_nil(period) do
+      prev(schedule, Timex.shift(datetime, days: -1), [force: true])  
     else
-      prev(schedule, Timex.shift(datetime, days: -1), [force: true])
+      {:ok, period, Period.use_time(period, datetime, :end)}      
     end
   end
 
@@ -198,7 +203,7 @@ defmodule BizEx.Schedule do
     periods
     |> Enum.sort(fn x, y -> 
        # TODO this seems a bit crap, there's probably a better way to do it.
-       if (x.weekday == y.weekday) do
+       if x.weekday == y.weekday do
          x.start_at < y.start_at
        else
          x.weekday < y.weekday

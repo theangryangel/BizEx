@@ -21,7 +21,8 @@ defmodule BizEx.Mixfile do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:timex, "~> 3.1"}
+      {:timex, "~> 3.1"},
+      {:credo, "~> 0.8", only: [:dev, :test], runtime: false}
     ]
   end
 end

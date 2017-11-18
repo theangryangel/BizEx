@@ -1,6 +1,6 @@
 defmodule BizEx.Period do
   @moduledoc """
-  Module that 
+  Module that defines and works with periods of time.
   """
 
   @enforce_keys [:start_at, :end_at, :weekday]
