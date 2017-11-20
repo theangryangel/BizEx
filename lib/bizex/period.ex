@@ -15,29 +15,37 @@ defmodule BizEx.Period do
   defstruct [:start_at, :end_at, :weekday]
 
   @type t :: %__MODULE__{
-    :start_at => Calendar.Time.t,
-    :end_at => Calendar.Time.t,
-    :weekday => integer
+    :start_at => Time.t,
+    :end_at => Time.t,
+    :weekday => 1..7
   }
 
   @doc """
   For the `period` and `datetime`, do the weekday match?
   """
+  @spec today?(t, DateTime.t) :: boolean() 
   def today?(%__MODULE__{} = period, %DateTime{} = datetime) do
-    (Timex.weekday(datetime) == period.weekday)
+    Timex.weekday(datetime) == period.weekday
   end
 
   @doc """
   For the `period` and `datetime`, does the weekday match, and does the time component of the `datetime` sit between (inclusive) 
   the start_at and end_at values?
   """
+  @spec between?(t, DateTime.t) :: boolean
   def between?(%__MODULE__{} = period, %DateTime{} = datetime) do
-    today?(period, datetime) and (Timex.between?(DateTime.to_time(datetime), period.start_at, period.end_at, inclusive: true))
+    with true <- today?(period, datetime),
+         time <- DateTime.to_time(datetime) do
+      time >= period.start_at and time <= period.end_at
+    else _ ->
+      false
+    end
   end
 
   @doc """
   For the `period` and `datetime`, does the weekday match, and is the time component of the `datetime` after the `period.start_at`? 
   """
+  @spec after?(t, DateTime.t) :: boolean
   def after?(%__MODULE__{} = period, %DateTime{} = datetime) do
     today?(period, datetime) and (period.start_at >= DateTime.to_time(datetime))
   end
@@ -45,6 +53,7 @@ defmodule BizEx.Period do
   @doc """
   For the `period` and `datetime`, does the weekday match, and is the time component of the `datetime` before the `period.end_at`? 
   """
+  @spec before?(t, DateTime.t) :: boolean
   def before?(%__MODULE__{} = period, %DateTime{} = datetime) do
     today?(period, datetime) and (period.end_at <= DateTime.to_time(datetime))
   end
@@ -52,6 +61,7 @@ defmodule BizEx.Period do
   @doc """
   Overwrite the time for the provided `datetime` using either the `period.start_at` or `period.end_at`
   """
+  @spec use_time(t, DateTime.t, atom()) :: Timex.Types.valid_datetime
   def use_time(period, datetime, field)
 
   def use_time(%__MODULE__{} = period, %DateTime{} = datetime, :start) do
@@ -61,7 +71,4 @@ defmodule BizEx.Period do
   def use_time(%__MODULE__{} = period, %DateTime{} = datetime, :end) do
     Timex.set(datetime, hour: period.end_at.hour, minute: period.end_at.minute, second: period.end_at.second, microsecond: period.end_at.microsecond)
   end
-
 end
-
-

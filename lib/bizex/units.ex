@@ -1,6 +1,7 @@
 defmodule BizEx.Units do
   @moduledoc false
 
+  @spec to_seconds(list | {atom(), integer}) :: integer
   def to_seconds(units) when is_list(units) do
     units
     |> Enum.map(&to_seconds/1)
@@ -21,6 +22,6 @@ defmodule BizEx.Units do
 
   def to_seconds({:seconds, seconds}), do: seconds
 
-  def to_seconds({unsupported_unit, _}), do: raise("Unsupported units (#{unsupported_unit})!")
+  def to_seconds({unsupported_unit, _}), do: raise("unsupported units (#{unsupported_unit})")
 
 end

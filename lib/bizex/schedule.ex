@@ -3,9 +3,15 @@ defmodule BizEx.Schedule do
   BizEx Schedule module.
   """
 
+  alias BizEx.Period  
+
   defstruct time_zone: "Etc/UTC", periods: [], holidays: []
 
-  alias BizEx.Period
+  @type t :: %__MODULE__ {
+    time_zone: Timex.Types.time_zone,
+    periods: list(Period.t),
+    holidays: list(Date.t)
+  }
 
   # TODO: Re-implement.
   #def load_config() do
@@ -53,6 +59,7 @@ defmodule BizEx.Schedule do
   @doc """
   Set the timezone of the schedule.
   """
+  @spec set_timezone(t, Timex.Types.time_zone) :: t
   def set_timezone(%__MODULE__{} = schedule, time_zone) when is_binary(time_zone) do
     if Timex.Timezone.exists?(time_zone) do
       %{schedule | time_zone: time_zone}
@@ -65,6 +72,7 @@ defmodule BizEx.Schedule do
   Add a working period (comprising of `start_at` time, `end_at` time and a `weekday` number) to a `schedule`, 
   ensuring that the periods are correctly ordered and no overlapping of periods occurs.
   """
+  @spec add_period(t, Time.t, Time.t, Timex.Types.weekday) :: t
   def add_period(%__MODULE__{} = schedule, %Time{} = start_at, %Time{} = end_at, weekday) when weekday >= 1 and weekday <= 7 do
     new_period = %Period{start_at: start_at, end_at: end_at, weekday: weekday}
 
@@ -78,6 +86,7 @@ defmodule BizEx.Schedule do
   @doc """
   Add a holiday `date` to a `schedule`
   """
+  @spec add_holiday(t, Date.t) :: t
   def add_holiday(%__MODULE__{} = schedule, %Date{} = date) do
     %{schedule | holidays: (schedule.holidays ++ [date])}
   end
@@ -85,6 +94,7 @@ defmodule BizEx.Schedule do
   @doc """
   Checks if a given `date` is defined as a holiday, in the provided `schedule`
   """
+  @spec holiday?(t, Date.t | DateTime.t | NaiveDateTime.t) :: boolean
   def holiday?(schedule, date)
 
   def holiday?(%__MODULE__{} = schedule, %Date{} = date) do
@@ -105,6 +115,7 @@ defmodule BizEx.Schedule do
   Assumption is currently made that the timezone of the provided `datetime` is the same
   as the `schedule` timezone.
   """
+  @spec between?(t, DateTime.t) :: {:ok, Period.t} | {:error, term()}
   def between?(%__MODULE__{} = schedule, %DateTime{} = datetime) do
     period = schedule.periods
              |> Enum.map(fn x ->
@@ -128,6 +139,7 @@ defmodule BizEx.Schedule do
   Assumption is currently made that the timezone of the provided `datetime` is the same
   as the `schedule` timezone.
   """
+  @spec current(t, DateTime.t) :: {:ok, Period.t} | {:error, term()}
   def current(%__MODULE__{} = schedule, %DateTime{} = datetime) do
     between?(schedule, datetime)
   end
@@ -138,6 +150,7 @@ defmodule BizEx.Schedule do
   Assumption is currently made that the timezone of the provided `datetime` is the same
   as the `schedule` timezone.
   """
+  @spec next(t, DateTime.t, list) :: {:ok, Period.t, DateTime.t}
   def next(%__MODULE__{} = schedule, %DateTime{} = datetime, opts \\ []) do
     force_time = Keyword.get(opts, :force, false)
 
@@ -171,6 +184,7 @@ defmodule BizEx.Schedule do
   Assumption is currently made that the timezone of the provided `datetime` is the same
   as the `schedule` timezone.
   """
+  @spec prev(t, DateTime.t, list) :: {:ok, Period.t, DateTime.t}
   def prev(%__MODULE__{} = schedule, %DateTime{} = datetime, opts \\ []) do
     force_time = Keyword.get(opts, :force, false)
 
@@ -214,7 +228,7 @@ defmodule BizEx.Schedule do
   # Determine if the new_period overlaps with any of the existing periods
   defp overlaps?(existing_periods, %Period{} = new_period) do
     Enum.any?(existing_periods, fn x -> 
-        x.weekday == new_period.weekday and Timex.between?(new_period.start_at, x.start_at, x.end_at, inclusive: true)
+        x.weekday == new_period.weekday and new_period.start_at >= x.start_at and new_period.start_at <= x.end_at
     end)
   end
 end

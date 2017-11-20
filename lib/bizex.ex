@@ -3,6 +3,7 @@ defmodule BizEx do
   Documentation for BizEx.
   """
   alias BizEx.Schedule
+  alias BizEx.Period
   alias BizEx.Math
 
   @doc """
@@ -11,7 +12,8 @@ defmodule BizEx do
   Will automatically convert the datetime to the same timezone as the schedule, 
   and then convert back to the original timezone.
   """
-  def shift(%Schedule{} = schedule, datetime, params) do
+  @spec shift(Schedule.t, DateTime.t, list()) :: DateTime.t
+  def shift(%Schedule{} = schedule, %DateTime{} = datetime, params) do
     converted_datetime = Timex.Timezone.convert(datetime, schedule.time_zone)
     schedule 
     |> Math.shift(converted_datetime, params)
@@ -24,9 +26,10 @@ defmodule BizEx do
   Will automatically convert the datetime to the same timezone as the schedule, 
   and then convert back to the original timezone.
   """
-  def current(%Schedule{} = schedule, datetime) do
+  @spec current(Schedule.t, DateTime.t) :: {:ok, Period.t, DateTime.t} | {:error, String.t, DateTime.t}
+  def current(%Schedule{} = schedule, %DateTime{} = datetime) do
     converted_datetime = Timex.Timezone.convert(datetime, schedule.time_zone)
-    with {:ok, period, converted_datetime} <- Schedule.current(schedule, converted_datetime) do
+    with {:ok, period} <- Schedule.current(schedule, converted_datetime) do
       {:ok, period, Timex.Timezone.convert(converted_datetime, datetime.time_zone)}
     else _ ->
       {:error, "not in hours", datetime}
@@ -39,6 +42,7 @@ defmodule BizEx do
   Will automatically convert the datetime to the same timezone as the schedule, 
   and then convert back to the original timezone.
   """
+  @spec prev(Schedule.t, DateTime.t) :: {:ok, Period.t, DateTime.t} 
   def prev(%Schedule{} = schedule, datetime) do
     converted_datetime = Timex.Timezone.convert(datetime, schedule.time_zone)
     {:ok, period, converted_datetime} = Schedule.prev(schedule, converted_datetime)
@@ -52,6 +56,7 @@ defmodule BizEx do
   Will automatically convert the datetime to the same timezone as the schedule, 
   and then convert back to the original timezone.
   """
+  @spec next(Schedule.t, DateTime.t) :: {:ok, Period.t, DateTime.t}
   def next(%Schedule{} = schedule, datetime) do
     converted_datetime = Timex.Timezone.convert(datetime, schedule.time_zone)
     {:ok, period, converted_datetime} = Schedule.next(schedule, converted_datetime)
@@ -64,6 +69,7 @@ defmodule BizEx do
 
   Will automatically convert the datetime to the same timezone as the schedule.
   """
+  @spec holiday?(Schedule.t, DateTime.t | NaiveDateTime.t | Date.t) :: boolean
   def holiday?(%Schedule{} = schedule, datetime) do
     date = datetime
     |> Timex.Timezone.convert(schedule.time_zone)
