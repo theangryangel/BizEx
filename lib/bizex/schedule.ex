@@ -226,6 +226,17 @@ defmodule BizEx.Schedule do
     end
   end
 
+  @doc """
+  Checks if a schedule is valid.
+  """
+  @spec valid?(t) :: boolean
+  def valid?(%__MODULE__{} = schedule) do
+    # TODO This needs to be padded out a bit and check for overlapping.
+    # Do we care about performance?
+    # Should this be checked by the user manually, or by the public functions on every call?
+    length(schedule.periods) > 0
+  end
+
   # Sort a list of periods, into their correct order
   defp sort_periods(periods) do
     periods
