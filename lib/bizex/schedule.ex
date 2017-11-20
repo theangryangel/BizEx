@@ -72,8 +72,8 @@ defmodule BizEx.Schedule do
   Add a working period (comprising of `start_at` time, `end_at` time and a `weekday` number) to a `schedule`, 
   ensuring that the periods are correctly ordered and no overlapping of periods occurs.
   """
-  @spec add_period(t, Time.t, Time.t, Timex.Types.weekday) :: t
-  def add_period(%__MODULE__{} = schedule, %Time{} = start_at, %Time{} = end_at, weekday) when weekday >= 1 and weekday <= 7 do
+  @spec add_period(t, Time.t, Time.t, Timex.Types.weekday | :mon | :tue | :wed | :thu | :fri | :sat | :sun) :: t
+  def add_period(%__MODULE__{} = schedule, %Time{} = start_at, %Time{} = end_at, weekday) when is_number(weekday) and weekday >= 1 and weekday <= 7 do
     new_period = %Period{start_at: start_at, end_at: end_at, weekday: weekday}
 
     if overlaps?(schedule.periods, new_period) do
@@ -81,6 +81,20 @@ defmodule BizEx.Schedule do
     else    
       %{schedule | periods: sort_periods(schedule.periods ++ [new_period])}
     end
+  end
+
+  def add_period(%__MODULE__{} = schedule, %Time{} = start_at, %Time{} = end_at, weekday) when is_atom(weekday) do
+    weekday_number = case weekday do
+      :mon -> 1
+      :tue -> 2
+      :wed -> 3
+      :thu -> 4
+      :fri -> 5
+      :sat -> 6
+      :sun -> 7
+    end
+
+    add_period(schedule, start_at, end_at, weekday_number)
   end
 
   @doc """
