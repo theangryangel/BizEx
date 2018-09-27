@@ -36,8 +36,8 @@ defmodule BizEx.Period do
   def between?(%__MODULE__{} = period, %DateTime{} = datetime) do
     with true <- today?(period, datetime),
          time <- DateTime.to_time(datetime),
-         :gt <- Time.compare(time, period.start_at),
-         :lt <- Time.compare(time, period.end_at)
+         true <- time_gte(Time.compare(time, period.start_at)),
+         true <- time_lte(Time.compare(time, period.end_at))
     do
       true
     else _ ->
@@ -50,7 +50,7 @@ defmodule BizEx.Period do
   """
   @spec after?(t, DateTime.t) :: boolean
   def after?(%__MODULE__{} = period, %DateTime{} = datetime) do
-    today?(period, datetime) and (period.start_at >= DateTime.to_time(datetime))
+    today?(period, datetime) and and time_gte(Time.compare(DateTime.to_time(datetime), period.start_at))
   end
 
   @doc """
@@ -58,7 +58,7 @@ defmodule BizEx.Period do
   """
   @spec before?(t, DateTime.t) :: boolean
   def before?(%__MODULE__{} = period, %DateTime{} = datetime) do
-    today?(period, datetime) and (period.end_at <= DateTime.to_time(datetime))
+    today?(period, datetime) and time_lte(Time.compare(DateTime.to_time(datetime), period.end_at))
   end
 
   @doc """
@@ -74,4 +74,10 @@ defmodule BizEx.Period do
   def use_time(%__MODULE__{} = period, %DateTime{} = datetime, :end) do
     Timex.set(datetime, hour: period.end_at.hour, minute: period.end_at.minute, second: period.end_at.second, microsecond: period.end_at.microsecond)
   end
+  
+  defp time_gte(w) when w in [:gt, :eq], do: true
+  defp time_gte(_), do: false
+  
+  defp time_lte(w) when w in [:lt, :eq], do: true
+  defp time_lte(_), do: false
 end
