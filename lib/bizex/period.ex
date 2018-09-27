@@ -35,8 +35,11 @@ defmodule BizEx.Period do
   @spec between?(t, DateTime.t) :: boolean
   def between?(%__MODULE__{} = period, %DateTime{} = datetime) do
     with true <- today?(period, datetime),
-         time <- DateTime.to_time(datetime) do
-      time >= period.start_at and time <= period.end_at
+         time <- DateTime.to_time(datetime),
+         :gt <- Time.compare(time, period.start_at),
+         :lt <- Time.compare(time, period.end_at)
+    do
+      true
     else _ ->
       false
     end
