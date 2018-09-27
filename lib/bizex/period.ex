@@ -50,7 +50,7 @@ defmodule BizEx.Period do
   """
   @spec after?(t, DateTime.t) :: boolean
   def after?(%__MODULE__{} = period, %DateTime{} = datetime) do
-    today?(period, datetime) and and time_gte(Time.compare(DateTime.to_time(datetime), period.start_at))
+    today?(period, datetime) and time_gte(Time.compare(DateTime.to_time(datetime), period.start_at))
   end
 
   @doc """
