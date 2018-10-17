@@ -63,6 +63,19 @@ defmodule BizEx do
 
     {:ok, period, Timex.Timezone.convert(converted_datetime, datetime.time_zone)}
   end
+  
+  @doc """
+  Return periods for a given day
+  """
+  @spec holiday?(Schedule.t, DateTime.t | NaiveDateTime.t | Date.t) :: list(BizEx.Period.t)
+  def periods(%Schedule{} = schedule, datetime) do
+    if holiday?(schedule, datetime) do
+      []
+    else
+      schedule.periods
+      |> Enum.filter(fn p -> p.weekday == Timex.weekday(Timex.now()) end)
+    end
+  end
 
   @doc """
   Returns whether or not the provided `datetime` is defined as a holiday in the `schedule`.
