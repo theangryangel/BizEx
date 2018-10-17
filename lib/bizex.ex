@@ -67,7 +67,7 @@ defmodule BizEx do
   @doc """
   Return periods for a given day
   """
-  @spec holiday?(Schedule.t, DateTime.t | NaiveDateTime.t | Date.t) :: list(BizEx.Period.t)
+  @spec periods(Schedule.t, DateTime.t | NaiveDateTime.t | Date.t) :: list(BizEx.Period.t)
   def periods(%Schedule{} = schedule, datetime) do
     if holiday?(schedule, datetime) do
       []
