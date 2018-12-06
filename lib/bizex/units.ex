@@ -5,7 +5,7 @@ defmodule BizEx.Units do
   def to_seconds(units) when is_list(units) do
     units
     |> Enum.map(&to_seconds/1)
-    |> Enum.reduce(fn(x, acc) -> x + acc end)
+    |> Enum.reduce(fn x, acc -> x + acc end)
   end
 
   def to_seconds({:days, days}) do
@@ -23,5 +23,4 @@ defmodule BizEx.Units do
   def to_seconds({:seconds, seconds}), do: seconds
 
   def to_seconds({unsupported_unit, _}), do: raise("unsupported units (#{unsupported_unit})")
-
 end

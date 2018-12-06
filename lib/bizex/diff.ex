@@ -1,5 +1,4 @@
 defmodule BizEx.Diff do
-
   alias BizEx.Schedule
 
   def diff(schedule, start_at, end_at) do
@@ -20,17 +19,17 @@ defmodule BizEx.Diff do
 
     case Schedule.working?(schedule, start_at) do
       {:ok, _period, period_start_at, period_end_at} ->
-
         cond do
           Timex.compare(start_at, end_at) == 0 ->
             acc
 
-          Timex.compare(period_end_at, end_at, :days) == 0 and Timex.compare(period_end_at, end_at) >= 0 ->
+          Timex.compare(period_end_at, end_at, :days) == 0 and
+              Timex.compare(period_end_at, end_at) >= 0 ->
             acc + Timex.diff(end_at, start_at, :seconds)
 
           true ->
             acc = acc + Timex.diff(period_start_at, start_at, :seconds)
-            
+
             {:ok, _start_date, end_date, _} = Schedule.previous_working(schedule, start_at)
             diff(schedule, end_date, end_at, acc, count + 1)
         end
@@ -44,8 +43,8 @@ defmodule BizEx.Diff do
   defp current_or_next(schedule, datetime) do
     case Schedule.working?(schedule, datetime) do
       {:ok, _period, _period_start_at, _period_end_at} ->
-        datetime 
-      
+        datetime
+
       _ ->
         {:ok, start_date, _, _} = Schedule.next_working(schedule, datetime)
         start_date

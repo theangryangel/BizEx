@@ -4,8 +4,8 @@ defmodule BizEx do
   """
 
   alias BizEx.{
-    Schedule, 
-    Shift, 
+    Schedule,
+    Shift,
     Diff
   }
 
@@ -13,9 +13,10 @@ defmodule BizEx do
   Are we working?
   """
   def working?(schedule, datetime) do
-    date = datetime
-    |> Timex.Timezone.convert(schedule.time_zone)
-    |> DateTime.to_date
+    date =
+      datetime
+      |> Timex.Timezone.convert(schedule.time_zone)
+      |> DateTime.to_date()
 
     case Schedule.working?(schedule, date) do
       {:ok, _period} -> true
@@ -24,9 +25,10 @@ defmodule BizEx do
   end
 
   def holiday?(schedule, datetime) do
-    date = datetime
-    |> Timex.Timezone.convert(schedule.time_zone)
-    |> DateTime.to_date
+    date =
+      datetime
+      |> Timex.Timezone.convert(schedule.time_zone)
+      |> DateTime.to_date()
 
     Schedule.holiday?(schedule, date)
   end
@@ -45,21 +47,22 @@ defmodule BizEx do
     date = Timex.Timezone.convert(date, schedule.time_zone)
 
     case Schedule.working?(schedule, date) do
-      {:ok, _period, start_at, end_at} -> 
-        start_at = if Timex.after?(date, start_at) do
-          date
-        else
-          start_at
-        end
+      {:ok, _period, start_at, end_at} ->
+        start_at =
+          if Timex.after?(date, start_at) do
+            date
+          else
+            start_at
+          end
 
         start_at = Timex.Timezone.convert(start_at, original_tz)
         end_at = Timex.Timezone.convert(end_at, original_tz)
 
         {:ok, start_at, end_at}
-      e -> 
+
+      e ->
         e
     end
-
   end
 
   @doc """
@@ -78,7 +81,7 @@ defmodule BizEx do
     {:ok, start_at, end_at, _period} = Schedule.next_working(schedule, converted_dt)
 
     {
-      Timex.Timezone.convert(start_at, original_tz), 
+      Timex.Timezone.convert(start_at, original_tz),
       Timex.Timezone.convert(end_at, original_tz)
     }
   end
@@ -90,7 +93,7 @@ defmodule BizEx do
     {:ok, start_at, end_at, _period} = Schedule.previous_working(schedule, converted_dt)
 
     {
-      Timex.Timezone.convert(start_at, original_tz), 
+      Timex.Timezone.convert(start_at, original_tz),
       Timex.Timezone.convert(end_at, original_tz)
     }
   end

@@ -17,5 +17,4 @@ defmodule BizExUnitsTest do
   test "1d1h = 90000 seconds" do
     assert BizEx.Units.to_seconds(days: 1, hours: 1) == 90000
   end
-
 end
