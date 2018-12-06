@@ -23,21 +23,28 @@ defmodule BizEx.Period do
   @doc """
   For the `period` and `datetime`, do the weekday match?
   """
-  @spec today?(t, DateTime.t) :: boolean() 
+  @spec today?(t, Date.t | DateTime.t) :: boolean() 
+
+  def today?(%__MODULE__{} = period, %Date{} = datetime) do
+    Timex.weekday(datetime) == period.weekday
+  end
+
   def today?(%__MODULE__{} = period, %DateTime{} = datetime) do
     Timex.weekday(datetime) == period.weekday
   end
 
   @doc """
-  For the `period` and `datetime`, does the weekday match, and does the time component of the `datetime` sit between (inclusive) 
-  the start_at and end_at values?
+  For the `period` and `datetime`, does the weekday match, and does the time component of the `datetime` sit between the start_at and end_at values?
+  Defaults to inclusive.
+  Provide [inclusive: false] as an option to override.
   """
-  @spec between?(t, DateTime.t) :: boolean
-  def between?(%__MODULE__{} = period, %DateTime{} = datetime) do
+  @spec active?(t, DateTime.t) :: boolean
+  def active?(%__MODULE__{} = period, %DateTime{} = datetime, opts \\ []) do
+    inclusive = Keyword.get(opts, :inclusive, true)
+
     with true <- today?(period, datetime),
          time <- DateTime.to_time(datetime),
-         true <- time_gte(Time.compare(time, period.start_at)),
-         true <- time_lte(Time.compare(time, period.end_at))
+         true <- do_between(time, period, inclusive)
     do
       true
     else _ ->
@@ -45,21 +52,57 @@ defmodule BizEx.Period do
     end
   end
 
+  defp do_between(time, period, true) do
+    time_gte(Time.compare(time, period.start_at)) and time_lte(Time.compare(time, period.end_at))
+  end
+
+  defp do_between(time, period, false) do
+    time_gt(Time.compare(time, period.start_at)) and time_lt(Time.compare(time, period.end_at))
+  end
+
   @doc """
   For the `period` and `datetime`, does the weekday match, and is the time component of the `datetime` after the `period.end_at`? 
   """
-  @spec after?(t, DateTime.t) :: boolean
-  def after?(%__MODULE__{} = period, %DateTime{} = datetime) do
+  @spec after_start?(t, DateTime.t) :: boolean
+  def after_start?(%__MODULE__{} = period, %DateTime{} = datetime) do
+    today?(period, datetime) and time_gt(Time.compare(DateTime.to_time(datetime), period.start_at))
+  end
+
+  @doc """
+  For the `period` and `datetime`, does the weekday match, and is the time component of the `datetime` before the `period.start_at`? 
+  """
+  @spec before_start?(t, DateTime.t) :: boolean
+  def before_start?(%__MODULE__{} = period, %DateTime{} = datetime) do
+    today?(period, datetime) and time_lt(Time.compare(DateTime.to_time(datetime), period.start_at))
+  end
+
+  @doc """
+  For the `period` and `datetime`, does the weekday match, and is the time component of the `datetime` after the `period.end_at`? 
+  """
+  @spec after_end?(t, DateTime.t) :: boolean
+  def after_end?(%__MODULE__{} = period, %DateTime{} = datetime) do
     today?(period, datetime) and time_gt(Time.compare(DateTime.to_time(datetime), period.end_at))
   end
 
   @doc """
   For the `period` and `datetime`, does the weekday match, and is the time component of the `datetime` before the `period.end_at`? 
   """
-  @spec before?(t, DateTime.t) :: boolean
-  def before?(%__MODULE__{} = period, %DateTime{} = datetime) do
+  @spec before_end?(t, DateTime.t) :: boolean
+  def before_end?(%__MODULE__{} = period, %DateTime{} = datetime) do
     today?(period, datetime) and time_lt(Time.compare(DateTime.to_time(datetime), period.end_at))
   end
+
+  defp time_gt(:gt), do: true
+  defp time_gt(_), do: false
+
+  defp time_gte(w) when w in [:gt, :eq], do: true
+  defp time_gte(_), do: false
+
+  defp time_lt(:lt), do: true
+  defp time_lt(_), do: false
+
+  defp time_lte(w) when w in [:lt, :eq], do: true
+  defp time_lte(_), do: false
 
   @doc """
   Overwrite the time for the provided `datetime` using either the `period.start_at` or `period.end_at`
@@ -74,16 +117,4 @@ defmodule BizEx.Period do
   def use_time(%__MODULE__{} = period, %DateTime{} = datetime, :end) do
     Timex.set(datetime, hour: period.end_at.hour, minute: period.end_at.minute, second: period.end_at.second, microsecond: period.end_at.microsecond)
   end
-
-  defp time_gt(:gt), do: true
-  defp time_gt(_), do: false
-
-  defp time_gte(w) when w in [:gt, :eq], do: true
-  defp time_gte(_), do: false
-
-  defp time_lt(:lt), do: true
-  defp time_lt(_), do: false
-
-  defp time_lte(w) when w in [:lt, :eq], do: true
-  defp time_lte(_), do: false
 end

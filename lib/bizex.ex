@@ -2,88 +2,28 @@ defmodule BizEx do
   @moduledoc """
   Documentation for BizEx.
   """
-  alias BizEx.Schedule
-  alias BizEx.Period
-  alias BizEx.Math
+
+  alias BizEx.{
+    Schedule, 
+    Shift, 
+    Diff
+  }
 
   @doc """
-  Shift (add/remove) time to the provided `datetime` according to the `schedule`.
-
-  Will automatically convert the datetime to the same timezone as the schedule, 
-  and then convert back to the original timezone.
+  Are we working?
   """
-  @spec shift(Schedule.t, DateTime.t, list()) :: DateTime.t
-  def shift(%Schedule{} = schedule, %DateTime{} = datetime, params) do
-    converted_datetime = Timex.Timezone.convert(datetime, schedule.time_zone)
-    schedule 
-    |> Math.shift(converted_datetime, params)
-    |> Timex.Timezone.convert(datetime.time_zone)
-  end
+  def working?(schedule, datetime) do
+    date = datetime
+    |> Timex.Timezone.convert(schedule.time_zone)
+    |> DateTime.to_date
 
-  @doc """
-  Return the currently active period, using the provided `datetime` according to the `schedule`.
-
-  Will automatically convert the datetime to the same timezone as the schedule, 
-  and then convert back to the original timezone.
-  """
-  @spec current(Schedule.t, DateTime.t) :: {:ok, Period.t, DateTime.t} | {:error, String.t, DateTime.t}
-  def current(%Schedule{} = schedule, %DateTime{} = datetime) do
-    converted_datetime = Timex.Timezone.convert(datetime, schedule.time_zone)
-    with {:ok, period} <- Schedule.current(schedule, converted_datetime) do
-      {:ok, period, Timex.Timezone.convert(converted_datetime, datetime.time_zone)}
-    else _ ->
-      {:error, "not in hours", datetime}
+    case Schedule.working?(schedule, date) do
+      {:ok, _period} -> true
+      _ -> false
     end
   end
 
-  @doc """
-  Return the previous active period, using the provided `datetime` according to the `schedule`.
-
-  Will automatically convert the datetime to the same timezone as the schedule, 
-  and then convert back to the original timezone.
-  """
-  @spec prev(Schedule.t, DateTime.t) :: {:ok, Period.t, DateTime.t} 
-  def prev(%Schedule{} = schedule, datetime) do
-    converted_datetime = Timex.Timezone.convert(datetime, schedule.time_zone)
-    {:ok, period, converted_datetime} = Schedule.prev(schedule, converted_datetime)
-
-    {:ok, period, Timex.Timezone.convert(converted_datetime, datetime.time_zone)}
-  end
-
-  @doc """
-  Return the next active period, using the provided `datetime` according to the `schedule`.
-
-  Will automatically convert the datetime to the same timezone as the schedule, 
-  and then convert back to the original timezone.
-  """
-  @spec next(Schedule.t, DateTime.t) :: {:ok, Period.t, DateTime.t}
-  def next(%Schedule{} = schedule, datetime) do
-    converted_datetime = Timex.Timezone.convert(datetime, schedule.time_zone)
-    {:ok, period, converted_datetime} = Schedule.next(schedule, converted_datetime)
-
-    {:ok, period, Timex.Timezone.convert(converted_datetime, datetime.time_zone)}
-  end
-  
-  @doc """
-  Return periods for a given day
-  """
-  @spec periods(Schedule.t, DateTime.t | NaiveDateTime.t | Date.t) :: list(BizEx.Period.t)
-  def periods(%Schedule{} = schedule, datetime) do
-    if holiday?(schedule, datetime) do
-      []
-    else
-      schedule.periods
-      |> Enum.filter(fn p -> p.weekday == Timex.weekday(Timex.now()) end)
-    end
-  end
-
-  @doc """
-  Returns whether or not the provided `datetime` is defined as a holiday in the `schedule`.
-
-  Will automatically convert the datetime to the same timezone as the schedule.
-  """
-  @spec holiday?(Schedule.t, DateTime.t | NaiveDateTime.t | Date.t) :: boolean
-  def holiday?(%Schedule{} = schedule, datetime) do
+  def holiday?(schedule, datetime) do
     date = datetime
     |> Timex.Timezone.convert(schedule.time_zone)
     |> DateTime.to_date
@@ -91,4 +31,75 @@ defmodule BizEx do
     Schedule.holiday?(schedule, date)
   end
 
+  @doc """
+  Current working period?
+  """
+
+  def current_working_period(schedule, %Date{} = date) do
+    current_working_period(schedule, Timex.to_datetime(date))
+  end
+
+  def current_working_period(schedule, %DateTime{} = date) do
+    original_tz = date.time_zone
+
+    date = Timex.Timezone.convert(date, schedule.time_zone)
+
+    case Schedule.working?(schedule, date) do
+      {:ok, _period, start_at, end_at} -> 
+        start_at = if Timex.after?(date, start_at) do
+          date
+        else
+          start_at
+        end
+
+        start_at = Timex.Timezone.convert(start_at, original_tz)
+        end_at = Timex.Timezone.convert(end_at, original_tz)
+
+        {:ok, start_at, end_at}
+      e -> 
+        e
+    end
+
+  end
+
+  @doc """
+  When is the next working period?
+  """
+  def next_working_period(schedule, date)
+
+  def next_working_period(schedule, %Date{} = date) do
+    next_working_period(schedule, Timex.to_datetime(date))
+  end
+
+  def next_working_period(schedule, %DateTime{} = datetime) do
+    original_tz = datetime.time_zone
+    converted_dt = Timex.Timezone.convert(datetime, schedule.time_zone)
+
+    {:ok, start_at, end_at, _period} = Schedule.next_working(schedule, converted_dt)
+
+    {
+      Timex.Timezone.convert(start_at, original_tz), 
+      Timex.Timezone.convert(end_at, original_tz)
+    }
+  end
+
+  def previous_working_period(schedule, datetime) do
+    original_tz = datetime.time_zone
+    converted_dt = Timex.Timezone.convert(datetime, schedule.time_zone)
+
+    {:ok, start_at, end_at, _period} = Schedule.previous_working(schedule, converted_dt)
+
+    {
+      Timex.Timezone.convert(start_at, original_tz), 
+      Timex.Timezone.convert(end_at, original_tz)
+    }
+  end
+
+  def shift(schedule, datetime, units) do
+    Shift.shift(schedule, datetime, units)
+  end
+
+  def diff(schedule, start_at, end_at) do
+    Diff.diff(schedule, start_at, end_at)
+  end
 end

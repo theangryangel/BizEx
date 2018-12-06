@@ -1,9 +1,6 @@
 defmodule BizEx.Schedule do
-  @moduledoc """
-  BizEx Schedule module.
-  """
 
-  alias BizEx.Period  
+  alias BizEx.Period
 
   defstruct time_zone: "Etc/UTC", periods: [], holidays: []
 
@@ -12,27 +9,6 @@ defmodule BizEx.Schedule do
     periods: list(Period.t),
     holidays: list(Date.t)
   }
-
-  # TODO: Re-implement.
-  #def load_config() do
-  #%Schedule{
-  #time_zone: load_schedule_timezone(),
-  #schedule: load_schedule(),
-  #holidays: load_holidays()
-  #}
-  #end
-
-  #defp load_schedule() do
-  #Application.get_env(:bizex, :schedule, %{})
-  #end
-
-  #defp load_schedule_timezone() do
-  #Application.get_env(:bizex, :schedule_timezone, "Etc/UTC")
-  #end
-
-  # defp load_holidays() do
-  #Application.get_env(:bizex, :holidays, [])
-  #end
 
   def default() do
     %__MODULE__{
@@ -46,7 +22,7 @@ defmodule BizEx.Schedule do
         %Period{start_at: ~T[09:00:00], end_at: ~T[17:30:00], weekday: 5}
       ],
       holidays: [
-        ~D[2017-12-25]
+        ~D[2018-12-25]
       ]
       # TODO add date specific override support
       # How do we feel about something like this?
@@ -123,108 +99,101 @@ defmodule BizEx.Schedule do
     holiday?(schedule, NaiveDateTime.to_date(datetime))
   end
 
-  @doc """
-  Checks if a given `datetime` is between any of the provided `schedule` periods.
-
-  Assumption is currently made that the timezone of the provided `datetime` is the same
-  as the `schedule` timezone.
-  """
-  @spec between?(t, DateTime.t) :: {:ok, Period.t} | {:error, term()}
-  def between?(%__MODULE__{} = schedule, %DateTime{} = datetime) do
-    period = schedule.periods
-             |> Enum.map(fn x ->
-               if Period.between?(x, datetime) do
-                 x
-               end
-             end)
-             |> Enum.reject(&is_nil/1)
-             |> List.first
-
-    if !is_nil(period) and !holiday?(schedule, datetime) do
-      {:ok, period}
+  def working?(%__MODULE__{} = schedule, %Date{} = date) do
+    if holiday?(schedule, date) do
+      {:error, "not in hours"} 
     else
+      found = Enum.find_value(schedule.periods, fn period ->
+        if Period.today?(period, date) do
+          {:ok, period}
+        end
+      end)
+
+      case found do
+        {:ok, period} ->
+          {:ok, period}
+
+        _ -> 
+          {:error, "not in hours"}
+      end
+
+    end
+  end
+
+  def working?(%__MODULE__{} = schedule, %DateTime{} = datetime) do
+    if holiday?(schedule, datetime) do
       {:error, "not in hours"}
-    end
-  end
-
-  @doc """
-  Fetch the any active period, for a given `datetime`, from the provided `schedule`.
-
-  Assumption is currently made that the timezone of the provided `datetime` is the same
-  as the `schedule` timezone.
-  """
-  @spec current(t, DateTime.t) :: {:ok, Period.t} | {:error, term()}
-  def current(%__MODULE__{} = schedule, %DateTime{} = datetime) do
-    between?(schedule, datetime)
-  end
-
-  @doc """
-  Fetch the next active period, for a given `datetime`, from the provided `schedule`.
-
-  Assumption is currently made that the timezone of the provided `datetime` is the same
-  as the `schedule` timezone.
-  """
-  @spec next(t, DateTime.t, list) :: {:ok, Period.t, DateTime.t}
-  def next(%__MODULE__{} = schedule, %DateTime{} = datetime, opts \\ []) do
-    force_time = Keyword.get(opts, :force, false)
-
-    period = schedule.periods
-             |> Enum.map(fn x ->
-
-               cond do
-                 holiday?(schedule, datetime) ->
-                   nil
-                 force_time == true and Period.today?(x, datetime) ->
-                   x
-                 Period.after?(x, datetime) ->
-                   x
-                 true ->
-                   nil
-               end
-             end)
-             |> Enum.reject(&is_nil/1)
-             |> List.first
-
-    if is_nil(period) do
-      next(schedule, Timex.shift(datetime, days: 1), [force: true])  
     else
-      {:ok, period, Period.use_time(period, datetime, :start)}      
+      found = Enum.find_value(schedule.periods, fn period ->
+        if Period.active?(period, datetime) do
+          {:ok, period}
+        end
+      end)
+
+      case found do
+        {:ok, period} ->
+          start_at = Period.use_time(period, datetime, :start)
+          end_at = Period.use_time(period, datetime, :end)
+
+          {:ok, period, start_at, end_at}
+
+        e ->
+          e
+      end
     end
   end
 
   @doc """
-  Fetch the previous active period, for a given `datetime`, from the provided `schedule`.
-
-  Assumption is currently made that the timezone of the provided `datetime` is the same
-  as the `schedule` timezone.
+  Get the next working time
   """
-  @spec prev(t, DateTime.t, list) :: {:ok, Period.t, DateTime.t}
-  def prev(%__MODULE__{} = schedule, %DateTime{} = datetime, opts \\ []) do
-    force_time = Keyword.get(opts, :force, false)
+  def next_working(%__MODULE__{} = schedule, %Date{} = date) do
+    next_working(schedule, Timex.to_datetime(date))
+  end
 
-    period = schedule.periods
-             |> Enum.map(fn x ->
+  def next_working(%__MODULE__{} = schedule, %DateTime{} = datetime) do
+    working_period = if !holiday?(schedule, datetime) do
+      Enum.find(schedule.periods, fn period ->
+        Period.before_start?(period, datetime) and Period.before_end?(period, datetime) 
+      end)
+    end
 
-               cond do
-                 holiday?(schedule, datetime) ->
-                   nil
-                 force_time == true and Period.today?(x, datetime) ->
-                   x
-                 Period.before?(x, datetime) ->
-                   x
-                 true ->
-                   nil
-               end
-             end)
-             |> Enum.reject(&is_nil/1)
-             |> List.first
+    if working_period do
+      start_date = Period.use_time(working_period, datetime, :start)
+      end_date = Period.use_time(working_period, datetime, :end)
 
-    if is_nil(period) do
-      prev(schedule, Timex.shift(datetime, days: -1), [force: true])  
+      {:ok, start_date, end_date, working_period}
     else
-      {:ok, period, Period.use_time(period, datetime, :end)}      
+      datetime = datetime
+      |> Timex.shift(days: 1)
+      |> Timex.set([hour: 0, minute: 0, second: 0])
+
+      next_working(schedule, datetime)
     end
   end
+
+  def previous_working(%__MODULE__{} = schedule, %DateTime{} = datetime) do
+    working_period = if !holiday?(schedule, datetime) do
+      schedule.periods
+      |> Enum.reverse()
+      |> Enum.find(fn period ->
+        Period.after_start?(period, datetime) and Period.after_end?(period, datetime)
+      end)
+    end
+
+    if working_period do
+      start_date = Period.use_time(working_period, datetime, :start)
+      end_date = Period.use_time(working_period, datetime, :end)
+
+      {:ok, start_date, end_date, working_period}
+    else
+      datetime = datetime
+      |> Timex.shift(days: -1)
+      |> Timex.end_of_day()
+
+      previous_working(schedule, datetime)
+    end
+  end
+
 
   @doc """
   Checks if a schedule is valid.
@@ -257,4 +226,3 @@ defmodule BizEx.Schedule do
     end)
   end
 end
-
