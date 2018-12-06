@@ -64,6 +64,13 @@ schedule = %BizEx.Schedule{}
   |> BizEx.Schedule.add_holiday(~D[2017-12-25])
 
 BizEx.shift(schedule, dt, hours: 1)
-#=> {:ok, #DateTime<2017-11-16 16:50:00Z>, 0}
+#=> #DateTime<2017-11-17 09:20:00Z>
+
+# This is an out of hours time! Our schedule says we end at 17:30
+{:ok, dt2, tz} = DateTime.from_iso8601("2017-11-16T17:50:00Z")
+
+# Since the schedule ends at 17:30, we end up with 40 minutes or 2400 seconds between 16:50 and 17:30, rather than 1 hour
+BizEx.diff(schedule, dt2, dt)
+#=> 2400
 
 ```

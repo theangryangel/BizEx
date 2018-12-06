@@ -1,5 +1,5 @@
 language: elixir
 sudo: false
 elixir:
-  - 1.5.2
+  - 1.7
 # TODO run credo in TravisCI?
