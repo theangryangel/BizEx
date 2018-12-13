@@ -67,7 +67,7 @@ defmodule BizExTest do
     expected_start_at = Timex.parse!("2018-12-26T09:00:00Z", "{ISO:Extended}")
     expected_end_at = Timex.parse!("2018-12-26T17:30:00Z", "{ISO:Extended}")
 
-    assert {expected_start_at, expected_end_at} ==
+    assert {:ok, expected_start_at, expected_end_at} ==
              BizEx.next_working_period(ctx[:schedule], ctx[:xmas])
   end
 
@@ -75,7 +75,7 @@ defmodule BizExTest do
     expected_start_at = Timex.parse!("2018-12-24T13:00:00Z", "{ISO:Extended}")
     expected_end_at = Timex.parse!("2018-12-24T17:30:00Z", "{ISO:Extended}")
 
-    assert {expected_start_at, expected_end_at} ==
+    assert {:ok, expected_start_at, expected_end_at} ==
              BizEx.next_working_period(
                ctx[:schedule],
                Timex.parse!("2018-12-24T10:30:00Z", "{ISO:Extended}")
@@ -86,7 +86,7 @@ defmodule BizExTest do
     expected_start_at = Timex.parse!("2018-12-24T13:00:00Z", "{ISO:Extended}")
     expected_end_at = Timex.parse!("2018-12-24T17:30:00Z", "{ISO:Extended}")
 
-    assert {expected_start_at, expected_end_at} ==
+    assert {:ok, expected_start_at, expected_end_at} ==
              BizEx.previous_working_period(
                ctx[:schedule],
                Timex.parse!("2018-12-24T17:45:00Z", "{ISO:Extended}")
@@ -97,7 +97,7 @@ defmodule BizExTest do
     expected_start_at = Timex.parse!("2018-12-24T09:00:00Z", "{ISO:Extended}")
     expected_end_at = Timex.parse!("2018-12-24T12:30:00Z", "{ISO:Extended}")
 
-    assert {expected_start_at, expected_end_at} ==
+    assert {:ok, expected_start_at, expected_end_at} ==
              BizEx.previous_working_period(
                ctx[:schedule],
                Timex.parse!("2018-12-24T17:25:00Z", "{ISO:Extended}")
@@ -108,7 +108,7 @@ defmodule BizExTest do
     expected_start_at = Timex.parse!("2018-12-21T09:00:00Z", "{ISO:Extended}")
     expected_end_at = Timex.parse!("2018-12-21T17:30:00Z", "{ISO:Extended}")
 
-    assert {expected_start_at, expected_end_at} ==
+    assert {:ok, expected_start_at, expected_end_at} ==
              BizEx.previous_working_period(
                ctx[:schedule],
                Timex.parse!("2018-12-24T12:20:00Z", "{ISO:Extended}")
@@ -116,7 +116,7 @@ defmodule BizExTest do
   end
 
   test "Diff in hours, on a working day", ctx do
-    assert -600 ==
+    assert {:ok, -600} ==
              BizEx.diff(
                ctx[:schedule],
                Timex.parse!("2018-12-24T17:20Z", "{ISO:Extended}"),
@@ -125,7 +125,7 @@ defmodule BizExTest do
   end
 
   test "Diff crossing a non-working day", ctx do
-    assert -30600 ==
+    assert {:ok, -30600} ==
              BizEx.diff(
                ctx[:schedule],
                Timex.parse!("2018-12-25T17:20Z", "{ISO:Extended}"),
@@ -134,7 +134,7 @@ defmodule BizExTest do
   end
 
   test "Diff on same day, both out of hours ", ctx do
-    assert 0 ==
+    assert {:ok, 0} ==
              BizEx.diff(
                ctx[:schedule],
                Timex.parse!("2018-12-25T17:20Z", "{ISO:Extended}"),
@@ -146,55 +146,55 @@ defmodule BizExTest do
     {:ok, current_dt} = Timex.parse("2017-11-16T09:00:00+00:00", "{ISO:Extended}")
     {:ok, wanted_dt} = Timex.parse("2017-11-16T10:00:00+00:00", "{ISO:Extended}")
 
-    assert wanted_dt == BizEx.shift(ctx[:schedule], current_dt, hours: 1)
+    assert {:ok, wanted_dt} == BizEx.shift(ctx[:schedule], current_dt, hours: 1)
   end
 
   test "Shift 1 hour, out of hours", ctx do
     {:ok, current_dt} = Timex.parse("2017-11-16T17:30:00+00:00", "{ISO:Extended}")
     {:ok, wanted_dt} = Timex.parse("2017-11-17T10:00:00+00:00", "{ISO:Extended}")
 
-    assert wanted_dt == BizEx.shift(ctx[:schedule], current_dt, hours: 1)
+    assert {:ok, wanted_dt} == BizEx.shift(ctx[:schedule], current_dt, hours: 1)
   end
 
   test "Shift 1 hour, out of hours, traversing multiple days", ctx  do
     {:ok, current_dt} = Timex.parse("2017-11-18T17:30:00+00:00", "{ISO:Extended}")
     {:ok, wanted_dt} = Timex.parse("2017-11-20T10:00:00+00:00", "{ISO:Extended}")
 
-    assert wanted_dt == BizEx.shift(ctx[:schedule], current_dt, hours: 1)
+    assert {:ok, wanted_dt} == BizEx.shift(ctx[:schedule], current_dt, hours: 1)
   end
 
   test "Shift -1 hour, in hours", ctx  do
     {:ok, current_dt} = Timex.parse("2017-11-16T10:00:00+00:00", "{ISO:Extended}")
     {:ok, wanted_dt} = Timex.parse("2017-11-16T09:00:00+00:00", "{ISO:Extended}")
 
-    assert wanted_dt == BizEx.shift(ctx[:schedule], current_dt, hours: -1)
+    assert {:ok, wanted_dt} == BizEx.shift(ctx[:schedule], current_dt, hours: -1)
   end
 
   test "Shift -1 hour, out of hours", ctx  do
     {:ok, current_dt} = Timex.parse("2017-11-16T17:30:00+00:00", "{ISO:Extended}")
     {:ok, wanted_dt} = Timex.parse("2017-11-16T16:30:00+00:00", "{ISO:Extended}")
 
-    assert wanted_dt == BizEx.shift(ctx[:schedule], current_dt, hours: -1)
+    assert {:ok, wanted_dt} == BizEx.shift(ctx[:schedule], current_dt, hours: -1)
   end
 
   test "Shift -1 hour, out of hours, traversing multiple days", ctx  do
     {:ok, current_dt} = Timex.parse("2017-11-18T17:30:00+00:00", "{ISO:Extended}")
     {:ok, wanted_dt} = Timex.parse("2017-11-17T16:30:00+00:00", "{ISO:Extended}")
 
-    assert wanted_dt == BizEx.shift(ctx[:schedule], current_dt, hours: -1)
+    assert {:ok, wanted_dt} == BizEx.shift(ctx[:schedule], current_dt, hours: -1)
   end
 
   test "Shift 1 hour, on a holiday", ctx  do
     {:ok, current_dt, _tz} = DateTime.from_iso8601("2017-12-25T16:50:00Z")
     {:ok, wanted_dt} = Timex.parse("2017-12-26T10:00:00Z:00+00:00", "{ISO:Extended}")
 
-    assert wanted_dt == BizEx.shift(ctx[:schedule], current_dt, hours: 1)
+    assert {:ok, wanted_dt} == BizEx.shift(ctx[:schedule], current_dt, hours: 1)
   end
 
   test "Shift -1 hour, on a holiday", ctx  do
     {:ok, current_dt, _tz} = DateTime.from_iso8601("2017-12-25T16:50:00Z")
     {:ok, wanted_dt} = Timex.parse("2017-12-22T16:30:00Z:00+00:00", "{ISO:Extended}")
 
-    assert wanted_dt == BizEx.shift(ctx[:schedule], current_dt, hours: -1)
+    assert {:ok, wanted_dt} == BizEx.shift(ctx[:schedule], current_dt, hours: -1)
   end
 end

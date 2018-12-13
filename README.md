@@ -2,26 +2,23 @@
 
 [![Build Status](https://travis-ci.org/theangryangel/BizEx.svg?branch=master)](https://travis-ci.org/theangryangel/BizEx)
 
-Work in Progress. Incomplete. API not stable. Minimal documentation. May contain bugs. Help wanted, etc.
+:warning: Minimal documentation. Works for Me(TM). May contain bugs. PR always appreciated, etc. **You have been warned.**
 
-**You have been warned.**
+A simple and small library that assists with time calculations using business/working hours.
 
-Adds business hours to a provided datetime, based on a schedule. 
-i.e. if your business is open 9-5, and you add 1 hour after 5, you'll end up with a time the next working day at 10.
+Inspired by [Biz](https://github.com/zendesk/biz), [business_time](https://github.com/bokmann/business_time) and [working_hours](https://github.com/Intrepidd/working_hours).
 
-Inspired by [Biz](https://github.com/zendesk/biz), [business_time](https://github.com/bokmann/business_time), [working_hours](https://github.com/Intrepidd/working_hours).
-
-## Supports;
-  * Shifting time by days, hours, minutes and seconds
-  * Multiple time periods per-day
-  * Manually defined holidays
+## Support:
+  * Multiple intervals/periods per-day
+  * As many schedules as you want (the first parameter to every public function is your schedule)
+  * Holidays (manually defined at present)
+  * Diffing and shifting time by working days, hours, minutes and seconds
+  * Timezone handling (datetimes passed to the public functions are are converted to the schedule timezone and then back for return values)
+  * Second-level calculation precision
 
 ## Known Issues
-  * There are assumptions based on the schedule order. If you do not use the `BizEx.Schedule.add_*` functions behaviour may not be defined
-  * Missing tests
-  * Shifting of time is not leap second aware (sorry for my purposes I just really dont need to engineer this in)
-  * Minimal module docs - still being worked on
-  * Shifting long periods of time may be slow
+  * Minimal docs - will be updated shortly
+  * Performance is not guaranteed - shift'ing or diff'ing over longer distances maybe slow depending on your schedule complexity
 
 ## Getting Started
 
@@ -51,7 +48,7 @@ schedule = BizEx.Schedule.default()
 
 # Add 1 working hour to the date time from above, using the default schedule
 BizEx.shift(schedule, dt, hours: 1)
-#=> #DateTime<2017-11-17 09:20:00Z>
+#=> {:ok, #DateTime<2017-11-17 09:20:00Z>}
 
 # Creating and using a custom defined schedule, rather than the default schedule
 schedule = %BizEx.Schedule{}
@@ -64,13 +61,13 @@ schedule = %BizEx.Schedule{}
   |> BizEx.Schedule.add_holiday(~D[2017-12-25])
 
 BizEx.shift(schedule, dt, hours: 1)
-#=> #DateTime<2017-11-17 09:20:00Z>
+#=> {:ok, #DateTime<2017-11-17 09:20:00Z>}
 
 # This is an out of hours time! Our schedule says we end at 17:30
 {:ok, dt2, tz} = DateTime.from_iso8601("2017-11-16T17:50:00Z")
 
 # Since the schedule ends at 17:30, we end up with 40 minutes or 2400 seconds between 16:50 and 17:30, rather than 1 hour
 BizEx.diff(schedule, dt2, dt)
-#=> 2400
+#=> {:ok, 2400}
 
 ```

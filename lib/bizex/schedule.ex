@@ -57,10 +57,15 @@ defmodule BizEx.Schedule do
       when is_number(weekday) and weekday >= 1 and weekday <= 7 do
     new_period = %Period{start_at: start_at, end_at: end_at, weekday: weekday}
 
-    if overlaps?(schedule.periods, new_period) do
-      raise "overlapping period defined, this is unsupported"
-    else
-      %{schedule | periods: sort_periods(schedule.periods ++ [new_period])}
+    cond do
+      overlaps?(schedule.periods, new_period) ->
+        raise "overlapping period defined, this is unsupported"
+
+      Enum.member?([:eq, :gt], Time.compare(start_at, end_at)) ->
+        raise "start_at <= end_at, this is unsupported"
+
+      true ->
+        %{schedule | periods: sort_periods(schedule.periods ++ [new_period])}
     end
   end
 
@@ -211,9 +216,6 @@ defmodule BizEx.Schedule do
   """
   @spec valid?(t) :: boolean
   def valid?(%__MODULE__{} = schedule) do
-    # TODO This needs to be padded out a bit and check for overlapping.
-    # Do we care about performance?
-    # Should this be checked by the user manually, or by the public functions on every call?
     length(schedule.periods) > 0
   end
 
