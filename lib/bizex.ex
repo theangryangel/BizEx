@@ -12,6 +12,7 @@ defmodule BizEx do
   @doc """
   Are we working?
   """
+  @spec working?(Schedule.t(), DateTime.t() | NaiveDateTime.t() | Date.t()) :: boolean()
   def working?(schedule, datetime) do
     date =
       datetime
@@ -27,6 +28,7 @@ defmodule BizEx do
   @doc """
   Is a given date a holiday?
   """
+  @spec holiday?(Schedule.t(), DateTime.t() | NaiveDateTime.t() | Date.t()) :: boolean()
   def holiday?(schedule, datetime) do
     date =
       datetime
@@ -51,8 +53,9 @@ defmodule BizEx do
   end
 
   @doc """
-  Current working period?
+  Current working period
   """
+  @spec current_working_period(Schedule.t(), DateTime.t() | NaiveDateTime.t() | Date.t()) :: {:ok, DateTime.t(), DateTime.t()} | {:error, any()}
   def current_working_period(schedule, date)
 
   def current_working_period(schedule, %Date{} = date) do
@@ -78,14 +81,15 @@ defmodule BizEx do
 
         {:ok, start_at, end_at}
 
-      e ->
-        e
+      _ ->
+        {:error, "not working"}
     end
   end
 
   @doc """
   When is the next working period?
   """
+  @spec next_working_period(Schedule.t(), DateTime.t() | NaiveDateTime.t() | Date.t()) :: {DateTime.t(), DateTime.t()}
   def next_working_period(schedule, date)
 
   def next_working_period(schedule, %Date{} = date) do
@@ -104,6 +108,10 @@ defmodule BizEx do
     }
   end
 
+  @doc """
+  When is the previous working period
+  """
+  @spec previous_working_period(Schedule.t(), DateTime.t() | NaiveDateTime.t() | Date.t()) :: {DateTime.t(), DateTime.t()} 
   def previous_working_period(schedule, datetime) do
     original_tz = datetime.time_zone
     converted_dt = Timex.Timezone.convert(datetime, schedule.time_zone)
@@ -116,10 +124,18 @@ defmodule BizEx do
     }
   end
 
+  @doc """
+  Shift the date time by some units of time.
+  """
+  @spec shift(Schedule.t(), DateTime.t() | NaiveDateTime.t() | Date.t(), integer() | keyword()) :: DateTime.t()
   def shift(schedule, datetime, units) do
     Shift.shift(schedule, datetime, units)
   end
 
+  @doc """
+  Working time between 2 datetimes, in seconds
+  """
+  @spec diff(Schedule.t(), DateTime.t() | NaiveDateTime.t() | Date.t(), DateTime.t() | NaiveDateTime.t() | Date.t()) :: integer()
   def diff(schedule, start_at, end_at) do
     Diff.diff(schedule, start_at, end_at)
   end
