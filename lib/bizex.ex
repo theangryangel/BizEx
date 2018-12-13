@@ -24,6 +24,9 @@ defmodule BizEx do
     end
   end
 
+  @doc """
+  Is a given date a holiday?
+  """
   def holiday?(schedule, datetime) do
     date =
       datetime
@@ -34,8 +37,23 @@ defmodule BizEx do
   end
 
   @doc """
+  Return the working periods for a given date
+  """
+  @spec working_periods_for(Schedule.t(), DateTime.t() | NaiveDateTime.t() | Date.t()) ::
+          list(BizEx.Period.t())
+  def working_periods_for(%Schedule{} = schedule, datetime) do
+    if holiday?(schedule, datetime) do
+      []
+    else
+      schedule.periods
+      |> Enum.filter(fn p -> p.weekday == Timex.weekday(datetime) end)
+    end
+  end
+
+  @doc """
   Current working period?
   """
+  def current_working_period(schedule, date)
 
   def current_working_period(schedule, %Date{} = date) do
     current_working_period(schedule, Timex.to_datetime(date))

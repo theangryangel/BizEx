@@ -21,6 +21,15 @@ defmodule BizExTest do
     ]
   end
 
+  test "Get working periods for Christmas Day 2018", ctx do
+    assert [] == BizEx.working_periods_for(ctx[:schedule], ctx[:xmas])
+
+    assert [
+             %BizEx.Period{end_at: ~T[12:30:00], start_at: ~T[09:00:00], weekday: 1},
+             %BizEx.Period{end_at: ~T[17:30:00], start_at: ~T[13:00:00], weekday: 1}
+           ] == BizEx.working_periods_for(BizEx.Schedule.default(), ~D[2018-12-24])
+  end
+
   test "Christmas Day 2018 is a holiday? and is not working?", ctx do
     assert true == BizEx.holiday?(ctx[:schedule], ctx[:xmas])
     assert false == BizEx.working?(ctx[:schedule], ctx[:xmas])
