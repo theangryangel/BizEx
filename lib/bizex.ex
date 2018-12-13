@@ -151,10 +151,14 @@ defmodule BizEx do
   @spec shift(Schedule.t(), DateTime.t() | NaiveDateTime.t() | Date.t(), integer() | keyword()) ::
           {:ok, DateTime.t()} | {:error, any()}
   def shift(schedule, datetime, units) do
-    with :ok <- schedule_valid?(schedule) do
-      datetime = Timex.Timezone.convert(datetime, schedule.time_zone)
+    with :ok <- schedule_valid?(schedule),
+         original_tz <- datetime.time_zone,
+         datetime <- Timex.Timezone.convert(datetime, schedule.time_zone)
+    do
+      datetime = Shift.shift(schedule, datetime, units)
+      datetime = Timex.Timezone.convert(datetime, original_tz)
 
-      {:ok, Shift.shift(schedule, datetime, units)}
+      {:ok, datetime}
     else
       e ->
         e
