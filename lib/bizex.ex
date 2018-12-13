@@ -20,8 +20,8 @@ defmodule BizEx do
       |> DateTime.to_date()
 
     with :ok <- schedule_valid?(schedule),
-      {:ok, _period} <- Schedule.working?(schedule, date) do
-        true
+         {:ok, _period} <- Schedule.working?(schedule, date) do
+      true
     else
       _ -> false
     end
@@ -61,7 +61,8 @@ defmodule BizEx do
   @doc """
   Current working period
   """
-  @spec current_working_period(Schedule.t(), DateTime.t() | NaiveDateTime.t() | Date.t()) :: {:ok, DateTime.t(), DateTime.t()} | {:error, any()}
+  @spec current_working_period(Schedule.t(), DateTime.t() | NaiveDateTime.t() | Date.t()) ::
+          {:ok, DateTime.t(), DateTime.t()} | {:error, any()}
   def current_working_period(schedule, date)
 
   def current_working_period(schedule, %Date{} = date) do
@@ -95,7 +96,8 @@ defmodule BizEx do
   @doc """
   When is the next working period?
   """
-  @spec next_working_period(Schedule.t(), DateTime.t() | NaiveDateTime.t() | Date.t()) :: {:ok, DateTime.t(), DateTime.t()} | {:error, any()}
+  @spec next_working_period(Schedule.t(), DateTime.t() | NaiveDateTime.t() | Date.t()) ::
+          {:ok, DateTime.t(), DateTime.t()} | {:error, any()}
   def next_working_period(schedule, date)
 
   def next_working_period(schedule, %Date{} = date) do
@@ -123,7 +125,8 @@ defmodule BizEx do
   @doc """
   When is the previous working period
   """
-  @spec previous_working_period(Schedule.t(), DateTime.t() | NaiveDateTime.t() | Date.t()) :: {:ok, DateTime.t(), DateTime.t()} | {:error, any()}
+  @spec previous_working_period(Schedule.t(), DateTime.t() | NaiveDateTime.t() | Date.t()) ::
+          {:ok, DateTime.t(), DateTime.t()} | {:error, any()}
   def previous_working_period(schedule, datetime) do
     with :ok <- schedule_valid?(schedule) do
       original_tz = datetime.time_zone
@@ -145,28 +148,32 @@ defmodule BizEx do
   @doc """
   Shift the date time by some units of time.
   """
-  @spec shift(Schedule.t(), DateTime.t() | NaiveDateTime.t() | Date.t(), integer() | keyword()) :: {:ok, DateTime.t()} | {:error, any()}
+  @spec shift(Schedule.t(), DateTime.t() | NaiveDateTime.t() | Date.t(), integer() | keyword()) ::
+          {:ok, DateTime.t()} | {:error, any()}
   def shift(schedule, datetime, units) do
     with :ok <- schedule_valid?(schedule) do
       datetime = Timex.Timezone.convert(datetime, schedule.time_zone)
-      
+
       {:ok, Shift.shift(schedule, datetime, units)}
     else
       e ->
         e
     end
-    
   end
 
   @doc """
   Working time between 2 datetimes, in seconds
   """
-  @spec diff(Schedule.t(), DateTime.t() | NaiveDateTime.t() | Date.t(), DateTime.t() | NaiveDateTime.t() | Date.t()) :: {:ok, integer()} | {:error, any()}
+  @spec diff(
+          Schedule.t(),
+          DateTime.t() | NaiveDateTime.t() | Date.t(),
+          DateTime.t() | NaiveDateTime.t() | Date.t()
+        ) :: {:ok, integer()} | {:error, any()}
   def diff(schedule, start_at, end_at) do
     with :ok <- schedule_valid?(schedule) do
       start_at = Timex.Timezone.convert(start_at, schedule.time_zone)
       end_at = Timex.Timezone.convert(end_at, schedule.time_zone)
-      
+
       {:ok, Diff.diff(schedule, start_at, end_at)}
     else
       e ->
@@ -178,6 +185,7 @@ defmodule BizEx do
     case Schedule.valid?(schedule) do
       true ->
         :ok
+
       false ->
         {:error, "invalid schedule"}
     end
