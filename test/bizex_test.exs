@@ -13,6 +13,7 @@ defmodule BizExTest do
       |> BizEx.Schedule.add_period(~T[09:00:00], ~T[17:30:00], :thu)
       |> BizEx.Schedule.add_period(~T[09:00:00], ~T[17:30:00], :fri)
       |> BizEx.Schedule.add_holiday(~D[2018-12-25])
+      |> BizEx.Schedule.add_holiday(~D[2017-12-25])
 
     [
       schedule: schedule,
@@ -27,7 +28,7 @@ defmodule BizExTest do
     assert [
              %BizEx.Period{end_at: ~T[12:30:00], start_at: ~T[09:00:00], weekday: 1},
              %BizEx.Period{end_at: ~T[17:30:00], start_at: ~T[13:00:00], weekday: 1}
-           ] == BizEx.working_periods_for(BizEx.Schedule.default(), ~D[2018-12-24])
+           ] == BizEx.working_periods_for(ctx[:schedule], ~D[2018-12-24])
   end
 
   test "Christmas Day 2018 is a holiday? and is not working?", ctx do
@@ -139,5 +140,61 @@ defmodule BizExTest do
                Timex.parse!("2018-12-25T17:20Z", "{ISO:Extended}"),
                Timex.parse!("2018-12-25T17:20Z", "{ISO:Extended}")
              )
+  end
+
+  test "Shift 1 hour, in hours", ctx do
+    {:ok, current_dt} = Timex.parse("2017-11-16T09:00:00+00:00", "{ISO:Extended}")
+    {:ok, wanted_dt} = Timex.parse("2017-11-16T10:00:00+00:00", "{ISO:Extended}")
+
+    assert wanted_dt == BizEx.shift(ctx[:schedule], current_dt, hours: 1)
+  end
+
+  test "Shift 1 hour, out of hours", ctx do
+    {:ok, current_dt} = Timex.parse("2017-11-16T17:30:00+00:00", "{ISO:Extended}")
+    {:ok, wanted_dt} = Timex.parse("2017-11-17T10:00:00+00:00", "{ISO:Extended}")
+
+    assert wanted_dt == BizEx.shift(ctx[:schedule], current_dt, hours: 1)
+  end
+
+  test "Shift 1 hour, out of hours, traversing multiple days", ctx  do
+    {:ok, current_dt} = Timex.parse("2017-11-18T17:30:00+00:00", "{ISO:Extended}")
+    {:ok, wanted_dt} = Timex.parse("2017-11-20T10:00:00+00:00", "{ISO:Extended}")
+
+    assert wanted_dt == BizEx.shift(ctx[:schedule], current_dt, hours: 1)
+  end
+
+  test "Shift -1 hour, in hours", ctx  do
+    {:ok, current_dt} = Timex.parse("2017-11-16T10:00:00+00:00", "{ISO:Extended}")
+    {:ok, wanted_dt} = Timex.parse("2017-11-16T09:00:00+00:00", "{ISO:Extended}")
+
+    assert wanted_dt == BizEx.shift(ctx[:schedule], current_dt, hours: -1)
+  end
+
+  test "Shift -1 hour, out of hours", ctx  do
+    {:ok, current_dt} = Timex.parse("2017-11-16T17:30:00+00:00", "{ISO:Extended}")
+    {:ok, wanted_dt} = Timex.parse("2017-11-16T16:30:00+00:00", "{ISO:Extended}")
+
+    assert wanted_dt == BizEx.shift(ctx[:schedule], current_dt, hours: -1)
+  end
+
+  test "Shift -1 hour, out of hours, traversing multiple days", ctx  do
+    {:ok, current_dt} = Timex.parse("2017-11-18T17:30:00+00:00", "{ISO:Extended}")
+    {:ok, wanted_dt} = Timex.parse("2017-11-17T16:30:00+00:00", "{ISO:Extended}")
+
+    assert wanted_dt == BizEx.shift(ctx[:schedule], current_dt, hours: -1)
+  end
+
+  test "Shift 1 hour, on a holiday", ctx  do
+    {:ok, current_dt, _tz} = DateTime.from_iso8601("2017-12-25T16:50:00Z")
+    {:ok, wanted_dt} = Timex.parse("2017-12-26T10:00:00Z:00+00:00", "{ISO:Extended}")
+
+    assert wanted_dt == BizEx.shift(ctx[:schedule], current_dt, hours: 1)
+  end
+
+  test "Shift -1 hour, on a holiday", ctx  do
+    {:ok, current_dt, _tz} = DateTime.from_iso8601("2017-12-25T16:50:00Z")
+    {:ok, wanted_dt} = Timex.parse("2017-12-22T16:30:00Z:00+00:00", "{ISO:Extended}")
+
+    assert wanted_dt == BizEx.shift(ctx[:schedule], current_dt, hours: -1)
   end
 end
