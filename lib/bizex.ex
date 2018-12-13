@@ -145,7 +145,7 @@ defmodule BizEx do
   @doc """
   Shift the date time by some units of time.
   """
-  @spec shift(Schedule.t(), DateTime.t() | NaiveDateTime.t() | Date.t(), integer() | keyword()) :: DateTime.t()
+  @spec shift(Schedule.t(), DateTime.t() | NaiveDateTime.t() | Date.t(), integer() | keyword()) :: {:ok, DateTime.t()} | {:error, any()}
   def shift(schedule, datetime, units) do
     with :ok <- schedule_valid?(schedule) do
       datetime = Timex.Timezone.convert(datetime, schedule.time_zone)
@@ -161,7 +161,7 @@ defmodule BizEx do
   @doc """
   Working time between 2 datetimes, in seconds
   """
-  @spec diff(Schedule.t(), DateTime.t() | NaiveDateTime.t() | Date.t(), DateTime.t() | NaiveDateTime.t() | Date.t()) :: integer()
+  @spec diff(Schedule.t(), DateTime.t() | NaiveDateTime.t() | Date.t(), DateTime.t() | NaiveDateTime.t() | Date.t()) :: {:ok, integer()} | {:error, any()}
   def diff(schedule, start_at, end_at) do
     with :ok <- schedule_valid?(schedule) do
       start_at = Timex.Timezone.convert(start_at, schedule.time_zone)
