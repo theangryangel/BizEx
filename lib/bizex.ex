@@ -81,8 +81,8 @@ defmodule BizEx do
 
         {:ok, start_at, end_at}
 
-      _ ->
-        {:error, "not working"}
+      e ->
+        e
     end
   end
 
