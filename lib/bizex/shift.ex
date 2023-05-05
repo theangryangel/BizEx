@@ -1,5 +1,6 @@
 defmodule BizEx.Shift do
-  alias BizEx.{Schedule, Units}
+  alias BizEx.Schedule
+  alias BizEx.Units
 
   def shift(%Schedule{} = schedule, %DateTime{} = datetime, units) when is_list(units) do
     seconds = Units.to_seconds(units)

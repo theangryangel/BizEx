@@ -3,11 +3,9 @@ defmodule BizEx do
   Documentation for BizEx.
   """
 
-  alias BizEx.{
-    Schedule,
-    Shift,
-    Diff
-  }
+  alias BizEx.Schedule
+  alias BizEx.Shift
+  alias BizEx.Diff
 
   @doc """
   Are we working?
@@ -53,8 +51,7 @@ defmodule BizEx do
     if holiday?(schedule, datetime) do
       []
     else
-      schedule.periods
-      |> Enum.filter(fn p -> p.weekday == Timex.weekday(datetime) end)
+      Enum.filter(schedule.periods, fn p -> p.weekday == Timex.weekday(datetime) end)
     end
   end
 

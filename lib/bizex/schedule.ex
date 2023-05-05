@@ -23,6 +23,7 @@ defmodule BizEx.Schedule do
       holidays: [
         ~D[2018-12-25]
       ]
+
       # TODO add date specific override support
       # How do we feel about something like this?
       # overrides: %{
@@ -44,7 +45,7 @@ defmodule BizEx.Schedule do
   end
 
   @doc """
-  Add a working period (comprising of `start_at` time, `end_at` time and a `weekday` number) to a `schedule`, 
+  Add a working period (comprising of `start_at` time, `end_at` time and a `weekday` number) to a `schedule`,
   ensuring that the periods are correctly ordered and no overlapping of periods occurs.
   """
   @spec add_period(
@@ -221,8 +222,7 @@ defmodule BizEx.Schedule do
 
   # Sort a list of periods, into their correct order
   defp sort_periods(periods) do
-    periods
-    |> Enum.sort(fn x, y ->
+    Enum.sort(periods, fn x, y ->
       # TODO this seems a bit crap, there's probably a better way to do it.
       if x.weekday == y.weekday do
         x.start_at < y.start_at
