@@ -153,8 +153,7 @@ defmodule BizEx do
   def shift(schedule, datetime, units) do
     with :ok <- schedule_valid?(schedule),
          original_tz <- datetime.time_zone,
-         datetime <- Timex.Timezone.convert(datetime, schedule.time_zone)
-    do
+         datetime <- Timex.Timezone.convert(datetime, schedule.time_zone) do
       datetime = Shift.shift(schedule, datetime, units)
       datetime = Timex.Timezone.convert(datetime, original_tz)
 
