@@ -192,7 +192,7 @@ defmodule BizExTest do
   end
 
   test "Shift -1 hour, on a holiday", ctx do
-    {:ok, current_dt, _tz} = DateTime.from_iso8601("2017-12-25T16:50:00Z")
+    {:ok, current_dt, _tz} = DateTime.from_iso8601("2017-12-25T16:50:00.00Z")
     {:ok, wanted_dt} = Timex.parse("2017-12-22T16:30:00Z:00+00:00", "{ISO:Extended}")
 
     assert {:ok, wanted_dt} == BizEx.shift(ctx[:schedule], current_dt, hours: -1)
