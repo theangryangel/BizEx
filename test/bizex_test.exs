@@ -189,7 +189,7 @@ defmodule BizExTest do
   test "Shift -1 hour, out of hours, traversing multiple days", ctx do
     {:ok, current_dt} = Timex.parse("2017-11-18T17:30:00+00:00", "{ISO:Extended}")
     {:ok, wanted_dt} = Timex.parse("2017-11-17T16:30:00+00:00", "{ISO:Extended}")
-    {:ok, shifted_dt} == BizEx.shift(ctx[:schedule], current_dt, hours: -1)
+    {:ok, shifted_dt} = BizEx.shift(ctx[:schedule], current_dt, hours: -1)
 
     assert_datetime_eq(wanted_dt, shifted_dt)
   end
