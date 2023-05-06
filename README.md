@@ -1,7 +1,5 @@
 # BizEx
 
-[![Build Status](https://travis-ci.org/theangryangel/BizEx.svg?branch=master)](https://travis-ci.org/theangryangel/BizEx)
-
 :warning: Minimal documentation. Works for Me(TM). May contain bugs. PR always appreciated, etc. **You have been warned.**
 
 A simple and small library that assists with time calculations using business/working hours.
