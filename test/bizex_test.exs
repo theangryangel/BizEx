@@ -125,7 +125,7 @@ defmodule BizExTest do
   end
 
   test "Diff crossing a non-working day", ctx do
-    assert {:ok, -30600} ==
+    assert {:ok, -30_600} ==
              BizEx.diff(
                ctx[:schedule],
                Timex.parse!("2018-12-25T17:20Z", "{ISO:Extended}"),

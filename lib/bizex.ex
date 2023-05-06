@@ -3,11 +3,9 @@ defmodule BizEx do
   Documentation for BizEx.
   """
 
-  alias BizEx.{
-    Schedule,
-    Shift,
-    Diff
-  }
+  alias BizEx.Schedule
+  alias BizEx.Shift
+  alias BizEx.Diff
 
   @doc """
   Are we working?
@@ -37,9 +35,8 @@ defmodule BizEx do
       |> Timex.Timezone.convert(schedule.time_zone)
       |> DateTime.to_date()
 
-    with :ok <- schedule_valid?(schedule) do
-      Schedule.holiday?(schedule, date)
-    else
+    case schedule_valid?(schedule) do
+      :ok -> Schedule.holiday?(schedule, date)
       _ -> true
     end
   end
@@ -53,8 +50,7 @@ defmodule BizEx do
     if holiday?(schedule, datetime) do
       []
     else
-      schedule.periods
-      |> Enum.filter(fn p -> p.weekday == Timex.weekday(datetime) end)
+      Enum.filter(schedule.periods, fn p -> p.weekday == Timex.weekday(datetime) end)
     end
   end
 
@@ -88,8 +84,8 @@ defmodule BizEx do
 
         {:ok, start_at, end_at}
 
-      e ->
-        e
+      error ->
+        error
     end
   end
 
@@ -105,20 +101,21 @@ defmodule BizEx do
   end
 
   def next_working_period(schedule, %DateTime{} = datetime) do
-    with :ok <- schedule_valid?(schedule) do
-      original_tz = datetime.time_zone
-      converted_dt = Timex.Timezone.convert(datetime, schedule.time_zone)
+    case schedule_valid?(schedule) do
+      :ok ->
+        original_tz = datetime.time_zone
+        converted_dt = Timex.Timezone.convert(datetime, schedule.time_zone)
 
-      {:ok, start_at, end_at, _period} = Schedule.next_working(schedule, converted_dt)
+        {:ok, start_at, end_at, _period} = Schedule.next_working(schedule, converted_dt)
 
-      {
-        :ok,
-        Timex.Timezone.convert(start_at, original_tz),
-        Timex.Timezone.convert(end_at, original_tz)
-      }
-    else
-      e ->
-        e
+        {
+          :ok,
+          Timex.Timezone.convert(start_at, original_tz),
+          Timex.Timezone.convert(end_at, original_tz)
+        }
+
+      error ->
+        error
     end
   end
 
@@ -128,20 +125,21 @@ defmodule BizEx do
   @spec previous_working_period(Schedule.t(), DateTime.t() | NaiveDateTime.t() | Date.t()) ::
           {:ok, DateTime.t(), DateTime.t()} | {:error, any()}
   def previous_working_period(schedule, datetime) do
-    with :ok <- schedule_valid?(schedule) do
-      original_tz = datetime.time_zone
-      converted_dt = Timex.Timezone.convert(datetime, schedule.time_zone)
+    case schedule_valid?(schedule) do
+      :ok ->
+        original_tz = datetime.time_zone
+        converted_dt = Timex.Timezone.convert(datetime, schedule.time_zone)
 
-      {:ok, start_at, end_at, _period} = Schedule.previous_working(schedule, converted_dt)
+        {:ok, start_at, end_at, _period} = Schedule.previous_working(schedule, converted_dt)
 
-      {
-        :ok,
-        Timex.Timezone.convert(start_at, original_tz),
-        Timex.Timezone.convert(end_at, original_tz)
-      }
-    else
-      e ->
-        e
+        {
+          :ok,
+          Timex.Timezone.convert(start_at, original_tz),
+          Timex.Timezone.convert(end_at, original_tz)
+        }
+
+      error ->
+        error
     end
   end
 
@@ -153,15 +151,14 @@ defmodule BizEx do
   def shift(schedule, datetime, units) do
     with :ok <- schedule_valid?(schedule),
          original_tz <- datetime.time_zone,
-         datetime <- Timex.Timezone.convert(datetime, schedule.time_zone)
-    do
+         datetime <- Timex.Timezone.convert(datetime, schedule.time_zone) do
       datetime = Shift.shift(schedule, datetime, units)
       datetime = Timex.Timezone.convert(datetime, original_tz)
 
       {:ok, datetime}
     else
-      e ->
-        e
+      error ->
+        error
     end
   end
 
@@ -174,14 +171,15 @@ defmodule BizEx do
           DateTime.t() | NaiveDateTime.t() | Date.t()
         ) :: {:ok, integer()} | {:error, any()}
   def diff(schedule, start_at, end_at) do
-    with :ok <- schedule_valid?(schedule) do
-      start_at = Timex.Timezone.convert(start_at, schedule.time_zone)
-      end_at = Timex.Timezone.convert(end_at, schedule.time_zone)
+    case schedule_valid?(schedule) do
+      :ok ->
+        start_at = Timex.Timezone.convert(start_at, schedule.time_zone)
+        end_at = Timex.Timezone.convert(end_at, schedule.time_zone)
 
-      {:ok, Diff.diff(schedule, start_at, end_at)}
-    else
-      e ->
-        e
+        {:ok, Diff.diff(schedule, start_at, end_at)}
+
+      error ->
+        error
     end
   end
 

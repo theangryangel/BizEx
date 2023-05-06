@@ -1,5 +1,6 @@
 defmodule BizEx.Shift do
-  alias BizEx.{Schedule, Units}
+  alias BizEx.Schedule
+  alias BizEx.Units
 
   def shift(%Schedule{} = schedule, %DateTime{} = datetime, units) when is_list(units) do
     seconds = Units.to_seconds(units)
@@ -23,7 +24,10 @@ defmodule BizEx.Shift do
       when is_integer(seconds) and seconds < 0 do
     case Schedule.working?(schedule, datetime) do
       {:ok, _period, period_start_at, _period_end_at} ->
-        raw_shifted = Timex.shift(datetime, seconds: seconds)
+        raw_shifted =
+          datetime
+          |> Timex.shift(seconds: seconds)
+          |> DateTime.truncate(:second)
 
         if Timex.before?(raw_shifted, period_start_at) do
           remainder = Timex.diff(raw_shifted, period_start_at, :seconds)
@@ -46,7 +50,10 @@ defmodule BizEx.Shift do
       when is_integer(seconds) and seconds > 0 do
     case Schedule.working?(schedule, datetime) do
       {:ok, _period, _period_start_at, period_end_at} ->
-        raw_shifted = Timex.shift(datetime, seconds: seconds)
+        raw_shifted =
+          datetime
+          |> Timex.shift(seconds: seconds)
+          |> DateTime.truncate(:second)
 
         if Timex.after?(raw_shifted, period_end_at) do
           remainder = Timex.diff(raw_shifted, period_end_at, :seconds)
